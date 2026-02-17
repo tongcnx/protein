@@ -47,34 +47,70 @@ def calculate(
         "food_analysis": food_analysis
     })
 
-@app.post("/portfolio", response_class=HTMLResponse)
+@app.post("/portfolio")
 async def portfolio(
     request: Request,
     weekly_protein: float = Form(...),
-    meals_per_day: int = Form(...),
+    chicken_percent: float = Form(0),
+    egg_percent: float = Form(0),
+    whey_percent: float = Form(0),
+    fish_percent: float = Form(0),
+    meals_per_day: int = Form(3)
 ):
-    form = await request.form()
 
-    foods = load_foods()
-    food_percentages = {}
-    total_percent = 0
+    try:
 
-    for food in foods:
-        percent = float(form.get(food["name"], 0))
-        food_percentages[food["name"]] = percent
-        total_percent += percent
+        total_percent = chicken_percent + egg_percent + whey_percent + fish_percent
 
-    if total_percent != 100:
+        if total_percent != 100:
+            return templates.TemplateResponse("index.html", {
+                "request": request,
+                "error": "เปอร์เซ็นต์รวมต้องเท่ากับ 100%"
+            })
+
+        foods = {
+            "อกไก่ (100g โปรตีน 31g)": 31,
+            "ไข่ (ฟองละ 6g)": 6,
+            "เวย์ (1 scoop 24g)": 24,
+            "ปลา (100g โปรตีน 22g)": 22
+        }
+
+        results = {}
+
+        # คำนวณแต่ละตัว
+        if chicken_percent > 0:
+            protein = weekly_protein * (chicken_percent / 100)
+            grams = protein / 31 * 100
+            results["อกไก่"] = round(grams, 1)
+
+        if egg_percent > 0:
+            protein = weekly_protein * (egg_percent / 100)
+            eggs = protein / 6
+            results["ไข่ (ฟอง)"] = round(eggs, 1)
+
+        if whey_percent > 0:
+            protein = weekly_protein * (whey_percent / 100)
+            scoops = protein / 24
+            results["เวย์ (scoop)"] = round(scoops, 1)
+
+        if fish_percent > 0:
+            protein = weekly_protein * (fish_percent / 100)
+            grams = protein / 22 * 100
+            results["ปลา (กรัม)"] = round(grams, 1)
+
+        daily_protein = weekly_protein / 7
+        protein_per_meal = daily_protein / meals_per_day
+
         return templates.TemplateResponse("index.html", {
             "request": request,
-            "error": "เปอร์เซ็นต์รวมต้องเท่ากับ 100%"
+            "results": results,
+            "daily_protein": round(daily_protein,1),
+            "protein_per_meal": round(protein_per_meal,1)
         })
 
-    results = calculate_portfolio(weekly_protein, food_percentages, meals_per_day)
-
-    return templates.TemplateResponse("index.html", {
-        "request": request,
-        "portfolio_results": results
-    })
-
-
+    except Exception as e:
+        print("ERROR:", e)
+        return templates.TemplateResponse("index.html", {
+            "request": request,
+            "error": "เกิดข้อผิดพลาดในระบบ กรุณาลองใหม่"
+        })
