@@ -19,7 +19,13 @@ activity_map = {
 
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    foods = load_foods()
+
+    return templates.TemplateResponse("index.html", {
+        "request": request,
+        "food_analysis": foods
+    })
+
 
 
 @app.post("/calculate", response_class=HTMLResponse)
