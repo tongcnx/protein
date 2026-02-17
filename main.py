@@ -3,7 +3,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
 from core.calculator import *
-from core.food_engine import calculate_food_requirements
+from core.food_engine import calculate_food_requirements, calculate_portfolio, load_foods
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
@@ -46,3 +46,35 @@ def calculate(
         "weekly_protein": round(weekly_protein, 2),
         "food_analysis": food_analysis
     })
+
+@app.post("/portfolio", response_class=HTMLResponse)
+async def portfolio(
+    request: Request,
+    weekly_protein: float = Form(...),
+    meals_per_day: int = Form(...),
+):
+    form = await request.form()
+
+    foods = load_foods()
+    food_percentages = {}
+    total_percent = 0
+
+    for food in foods:
+        percent = float(form.get(food["name"], 0))
+        food_percentages[food["name"]] = percent
+        total_percent += percent
+
+    if total_percent != 100:
+        return templates.TemplateResponse("index.html", {
+            "request": request,
+            "error": "เปอร์เซ็นต์รวมต้องเท่ากับ 100%"
+        })
+
+    results = calculate_portfolio(weekly_protein, food_percentages, meals_per_day)
+
+    return templates.TemplateResponse("index.html", {
+        "request": request,
+        "portfolio_results": results
+    })
+
+

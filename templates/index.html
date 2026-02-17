@@ -43,12 +43,30 @@
     โปรตีนต่อวัน: {{ daily_protein }} g<br>
     โปรตีนต่อสัปดาห์: {{ weekly_protein }} g<br>
 
-    <h4>ต้องกินเท่าไหร่ต่อสัปดาห์ (ถ้ากินจากแหล่งเดียว)</h4>
-    <ul>
+    <hr>
+    <h3>Protein Portfolio Planner</h3>
+
+    <form action="/portfolio" method="post">
+        โปรตีนต่อสัปดาห์ (g):
+        <input type="number" step="0.1" name="weekly_protein" required><br><br>
+
+        จำนวนมื้อต่อวัน:
+        <select name="meals_per_day">
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+        </select><br><br>
+
+        <h4>กำหนดสัดส่วน (%)</h4>
+        
         {% for food in food_analysis %}
-        <li>{{ food.name }} → {{ food.amount }} {{ food.unit }}</li>
+            {{ food.name }}
+            <input type="number" name="{{ food.name }}" min="0" max="100" value="0"> %<br><br>
         {% endfor %}
-    </ul>
+
+        <button type="submit">คำนวณ Portfolio</button>
+    </form>
+
     {% endif %}
 </body>
 </html>
