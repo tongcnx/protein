@@ -4,79 +4,108 @@
     <title>Protein Weekly Planner</title>
 </head>
 <body>
-    <h2>Protein Weekly Planner</h2>
 
-    <form action="/calculate" method="post">
-        น้ำหนัก (kg): <input type="number" step="0.1" name="weight"><br><br>
-        ส่วนสูง (cm): <input type="number" step="0.1" name="height"><br><br>
-        อายุ: <input type="number" name="age"><br><br>
+<h2>Protein Weekly Planner</h2>
 
-        เพศ:
-        <select name="gender">
-            <option value="male">ชาย</option>
-            <option value="female">หญิง</option>
-        </select><br><br>
+<form action="/calculate" method="post">
+    น้ำหนัก (kg):
+    <input type="number" step="0.1" name="weight" required><br><br>
 
-        Activity:
-        <select name="activity">
-            <option value="1.2">นั่งทำงาน</option>
-            <option value="1.375">ออกกำลัง 1-3 วัน</option>
-            <option value="1.55">3-5 วัน</option>
-            <option value="1.725">6-7 วัน</option>
-        </select><br><br>
+    ส่วนสูง (cm):
+    <input type="number" step="0.1" name="height" required><br><br>
 
-        เป้าหมาย:
-        <select name="goal">
-            <option value="maintain">Maintain</option>
-            <option value="gain">Muscle Gain</option>
-            <option value="cut">Fat Loss</option>
-        </select><br><br>
+    อายุ:
+    <input type="number" name="age" required><br><br>
 
-        <button type="submit">คำนวณ</button>
-    </form>
+    เพศ:
+    <select name="gender">
+        <option value="male">ชาย</option>
+        <option value="female">หญิง</option>
+    </select><br><br>
 
-    {% if daily_protein %}
-    <hr>
-    <h3>ผลลัพธ์</h3>
-    BMR: {{ bmr }} kcal<br>
-    TDEE: {{ tdee }} kcal<br>
-    โปรตีนต่อวัน: {{ daily_protein }} g<br>
-    โปรตีนต่อสัปดาห์: {{ weekly_protein }} g<br>
+    Activity:
+    <select name="activity">
+        <option value="1.2">นั่งทำงาน</option>
+        <option value="1.375">ออกกำลัง 1-3 วัน</option>
+        <option value="1.55">3-5 วัน</option>
+        <option value="1.725">6-7 วัน</option>
+    </select><br><br>
 
-    <hr>
-    <h3>Protein Portfolio Planner</h3>
+    เป้าหมาย:
+    <select name="goal">
+        <option value="maintain">Maintain</option>
+        <option value="gain">Muscle Gain</option>
+        <option value="cut">Fat Loss</option>
+    </select><br><br>
 
-    <form action="/portfolio" method="post">
-        โปรตีนต่อสัปดาห์ (g):
-        <input type="number" step="0.1" name="weekly_protein"
-        value="{{ weekly_protein }}" required>
+    <button type="submit">คำนวณ</button>
+</form>
+
+{% if daily_protein %}
+<hr>
+<h3>ผลลัพธ์</h3>
+
+BMR: {{ bmr }} kcal<br>
+TDEE: {{ tdee }} kcal<br>
+โปรตีนต่อวัน: {{ daily_protein }} g<br>
+โปรตีนต่อสัปดาห์: {{ weekly_protein }} g<br>
+
+<hr>
+<h3>Protein Portfolio Planner</h3>
+
+<form action="/portfolio" method="post">
+
+    โปรตีนต่อสัปดาห์ (g):
+    <input type="number"
+           step="0.1"
+           name="weekly_protein"
+           value="{{ weekly_protein }}"
+           required><br><br>
+
+    จำนวนมื้อต่อวัน:
+    <select name="meals_per_day">
+                <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+    </select><br><br>
+
+    <h4>กำหนดสัดส่วน (%)</h4>
+
+    อกไก่ %
+    <input type="number" name="chicken_percent" min="0" max="100" value="0"><br><br>
+
+    ไข่ %
+    <input type="number" name="egg_percent" min="0" max="100" value="0"><br><br>
+
+    เวย์ %
+    <input type="number" name="whey_percent" min="0" max="100" value="0"><br><br>
+
+    ปลา %
+    <input type="number" name="fish_percent" min="0" max="100" value="0"><br><br>
+
+    <button type="submit">คำนวณ Portfolio</button>
+</form>
+
+{% endif %}
 
 
-        จำนวนมื้อต่อวัน:
-        <select name="meals_per_day">
-            <option value="3">3</option>
-            <option value="4">4</option>
-            <option value="5">5</option>
-        </select><br><br>
+{% if results %}
+<hr>
+<h3>Portfolio Result</h3>
 
-        <h4>กำหนดสัดส่วน (%)</h4>
-        
-        อกไก่ %
-        <input type="number" name="chicken_percent" min="0" max="100" value="0"><br><br>
+{% for item, value in results.items() %}
+    {{ item }} : {{ value }} <br>
+{% endfor %}
 
-        ไข่ %
-        <input type="number" name="egg_percent" min="0" max="100" value="0"><br><br>
+<br>
+โปรตีนต่อมื้อ: {{ protein_per_meal }} g
+{% endif %}
 
-        เวย์ %
-        <input type="number" name="whey_percent" min="0" max="100" value="0"><br><br>
+{% if error %}
+<hr>
+<p style="color:red;">{{ error }}</p>
+{% endif %}
 
-        ปลา %
-        <input type="number" name="fish_percent" min="0" max="100" value="0"><br><br> 
-
-
-        <button type="submit">คำนวณ Portfolio</button>
-    </form>
-
-    {% endif %}
 </body>
 </html>

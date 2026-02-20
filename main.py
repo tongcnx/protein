@@ -124,3 +124,4 @@ async def portfolio(
             "protein_per_meal": round(protein_per_meal,1),
             "food_analysis": load_foods()
         })
+
