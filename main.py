@@ -118,5 +118,9 @@ async def portfolio(
         print("ERROR:", e)
         return templates.TemplateResponse("index.html", {
             "request": request,
-            "error": "เกิดข้อผิดพลาดในระบบ กรุณาลองใหม่"
+            "results": results,
+            "daily_protein": round(daily_protein,1),
+            "weekly_protein": weekly_protein,
+            "protein_per_meal": round(protein_per_meal,1),
+            "food_analysis": load_foods()
         })

@@ -61,8 +61,18 @@
 
         <h4>กำหนดสัดส่วน (%)</h4>
         
-        {% if food_analysis %}
-            {% for food in food_analysis %}
+        อกไก่ %
+        <input type="number" name="chicken_percent" min="0" max="100" value="0"><br><br>
+
+        ไข่ %
+        <input type="number" name="egg_percent" min="0" max="100" value="0"><br><br>
+
+        เวย์ %
+        <input type="number" name="whey_percent" min="0" max="100" value="0"><br><br>
+
+        ปลา %
+        <input type="number" name="fish_percent" min="0" max="100" value="0"><br><br> 
+
                 {{ food.name }}
                 <input type="number" name="{{ food.name }}" min="0" max="100" value="0"> %<br><br>
             {% endfor %}
