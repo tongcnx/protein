@@ -208,12 +208,17 @@ def register(
 
 
 @app.post("/login")
-def login(email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
+def login(
+    request: Request,
+    email: str = Form(...),
+    password: str = Form(...),
+    db: Session = Depends(get_db)
+):
 
     user = db.query(User).filter(User.email == email).first()
     if not user or not verify_password(password, user.password):
         return templates.TemplateResponse("login.html", {
-            "request": {},
+            "request": request,
             "error": "Invalid email or password"
         })
 
@@ -223,6 +228,7 @@ def login(email: str = Form(...), password: str = Form(...), db: Session = Depen
     response.set_cookie(key="token", value=access_token, httponly=True)
 
     return response
+
 
 @app.get("/login", response_class=HTMLResponse)
 def login_page(request: Request):
