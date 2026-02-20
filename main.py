@@ -24,6 +24,11 @@ def get_db():
 
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
+    token = request.cookies.get("token")
+
+    if not token:
+        return RedirectResponse(url="/login")
+
     return templates.TemplateResponse("index.html", {
         "request": request,
         "weight": "",
@@ -33,6 +38,7 @@ def home(request: Request):
         "activity": "1.2",
         "goal": "maintain"
     })
+
 
 
 @app.post("/calculate", response_class=HTMLResponse)
