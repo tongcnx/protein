@@ -1,11 +1,25 @@
-from fastapi import FastAPI, Request, Form
+from fastapi import FastAPI, Request, Form, HTTPException
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
+from sqlalchemy.orm import Session
+from database import SessionLocal, engine
+from models import User
+from auth import hash_password, verify_password, create_access_token
+from database import Base
+
 import random
+
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
@@ -170,3 +184,26 @@ def portfolio(
         "chart_data": chart_data,
         "total_cost": round(total_cost, 0)
     })
+
+@app.post("/register")
+def register(email: str, password: str, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == email).first()
+    if user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+
+    new_user = User(email=email, password=hash_password(password))
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    return {"message": "User created"}
+
+@app.post("/login")
+def login(email: str, password: str, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == email).first()
+    if not user or not verify_password(password, user.password):
+        raise HTTPException(status_code=400, detail="Invalid credentials")
+
+    access_token = create_access_token({"sub": user.email})
+    return {"access_token": access_token}
+
