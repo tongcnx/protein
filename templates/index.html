@@ -1,111 +1,158 @@
 <!DOCTYPE html>
-<html>
+<html lang="th">
 <head>
+    <meta charset="UTF-8">
     <title>Protein Weekly Planner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
 
-<h2>Protein Weekly Planner</h2>
+<body class="bg-gray-100 min-h-screen">
 
-<form action="/calculate" method="post">
-    น้ำหนัก (kg):
-    <input type="number" step="0.1" name="weight" required><br><br>
+<div class="max-w-5xl mx-auto py-10 px-4">
 
-    ส่วนสูง (cm):
-    <input type="number" step="0.1" name="height" required><br><br>
+    <h1 class="text-3xl font-bold text-center mb-8">
+        🥩 Protein Weekly Planner
+    </h1>
 
-    อายุ:
-    <input type="number" name="age" required><br><br>
+    <!-- ================= CALCULATOR CARD ================= -->
+    <div class="bg-white rounded-xl shadow-md p-6 mb-8">
+        <h2 class="text-xl font-semibold mb-4">Step 1: คำนวณพลังงาน</h2>
 
-    เพศ:
-    <select name="gender">
-        <option value="male">ชาย</option>
-        <option value="female">หญิง</option>
-    </select><br><br>
+        <form action="/calculate" method="post" class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-    Activity:
-    <select name="activity">
-        <option value="1.2">นั่งทำงาน</option>
-        <option value="1.375">ออกกำลัง 1-3 วัน</option>
-        <option value="1.55">3-5 วัน</option>
-        <option value="1.725">6-7 วัน</option>
-    </select><br><br>
+            <input type="number" step="0.1" name="weight" placeholder="น้ำหนัก (kg)" required class="input-style">
+            <input type="number" step="0.1" name="height" placeholder="ส่วนสูง (cm)" required class="input-style">
+            <input type="number" name="age" placeholder="อายุ" required class="input-style">
 
-    เป้าหมาย:
-    <select name="goal">
-        <option value="maintain">Maintain</option>
-        <option value="gain">Muscle Gain</option>
-        <option value="cut">Fat Loss</option>
-    </select><br><br>
+            <select name="gender" class="input-style">
+                <option value="male">ชาย</option>
+                <option value="female">หญิง</option>
+            </select>
 
-    <button type="submit">คำนวณ</button>
-</form>
+            <select name="activity" class="input-style">
+                <option value="1.2">นั่งทำงาน</option>
+                <option value="1.375">ออกกำลัง 1-3 วัน</option>
+                <option value="1.55">3-5 วัน</option>
+                <option value="1.725">6-7 วัน</option>
+            </select>
 
-{% if daily_protein %}
-<hr>
-<h3>ผลลัพธ์</h3>
+            <select name="goal" class="input-style">
+                <option value="maintain">Maintain</option>
+                <option value="gain">Muscle Gain</option>
+                <option value="cut">Fat Loss</option>
+            </select>
 
-BMR: {{ bmr }} kcal<br>
-TDEE: {{ tdee }} kcal<br>
-โปรตีนต่อวัน: {{ daily_protein }} g<br>
-โปรตีนต่อสัปดาห์: {{ weekly_protein }} g<br>
-
-<hr>
-<h3>Protein Portfolio Planner</h3>
-
-<form action="/portfolio" method="post">
-
-    โปรตีนต่อสัปดาห์ (g):
-    <input type="number"
-           step="0.1"
-           name="weekly_protein"
-           value="{{ weekly_protein }}"
-           required><br><br>
-
-    จำนวนมื้อต่อวัน:
-    <select name="meals_per_day">
-                <option value="2">2</option>
-        <option value="3">3</option>
-        <option value="4">4</option>
-        <option value="5">5</option>
-    </select><br><br>
-
-    <h4>กำหนดสัดส่วน (%)</h4>
-
-    อกไก่ %
-    <input type="number" name="chicken_percent" min="0" max="100" value="0"><br><br>
-
-    ไข่ %
-    <input type="number" name="egg_percent" min="0" max="100" value="0"><br><br>
-
-    เวย์ %
-    <input type="number" name="whey_percent" min="0" max="100" value="0"><br><br>
-
-    ปลา %
-    <input type="number" name="fish_percent" min="0" max="100" value="0"><br><br>
-
-    <button type="submit">คำนวณ Portfolio</button>
-</form>
-
-{% endif %}
+            <div class="md:col-span-2">
+                <button class="btn-primary w-full">
+                    คำนวณ
+                </button>
+            </div>
+        </form>
+    </div>
 
 
-{% if results %}
-<hr>
-<h3>Portfolio Result</h3>
+    {% if daily_protein %}
+    <!-- ================= RESULT CARD ================= -->
+    <div class="bg-green-50 border border-green-200 rounded-xl p-6 mb-8">
+        <h2 class="text-xl font-semibold mb-4">📊 ผลลัพธ์</h2>
 
-{% for item, value in results.items() %}
-    {{ item }} : {{ value }} <br>
-{% endfor %}
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+            <div class="result-box">
+                <p class="text-sm text-gray-500">BMR</p>
+                <p class="font-bold text-lg">{{ bmr }} kcal</p>
+            </div>
+            <div class="result-box">
+                <p class="text-sm text-gray-500">TDEE</p>
+                <p class="font-bold text-lg">{{ tdee }} kcal</p>
+            </div>
+            <div class="result-box">
+                <p class="text-sm text-gray-500">โปรตีน/วัน</p>
+                <p class="font-bold text-lg">{{ daily_protein }} g</p>
+            </div>
+            <div class="result-box">
+                <p class="text-sm text-gray-500">โปรตีน/สัปดาห์</p>
+                <p class="font-bold text-lg">{{ weekly_protein }} g</p>
+            </div>
+        </div>
+    </div>
 
-<br>
-โปรตีนต่อมื้อ: {{ protein_per_meal }} g
-{% endif %}
 
-{% if error %}
-<hr>
-<p style="color:red;">{{ error }}</p>
-{% endif %}
+    <!-- ================= PORTFOLIO CARD ================= -->
+    <div class="bg-white rounded-xl shadow-md p-6 mb-8">
+        <h2 class="text-xl font-semibold mb-4">Step 2: Protein Portfolio Planner</h2>
+
+        <form action="/portfolio" method="post" class="space-y-4">
+
+            <input type="hidden" name="weekly_protein" value="{{ weekly_protein }}">
+
+            <div>
+                <label>จำนวนมื้อต่อวัน</label>
+                <select name="meals_per_day" class="input-style w-full mt-1">
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                </select>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <input type="number" name="chicken_percent" placeholder="อกไก่ %" class="input-style">
+                <input type="number" name="egg_percent" placeholder="ไข่ %" class="input-style">
+                <input type="number" name="whey_percent" placeholder="เวย์ %" class="input-style">
+                <input type="number" name="fish_percent" placeholder="ปลา %" class="input-style">
+            </div>
+
+            <button class="btn-primary w-full">
+                คำนวณ Portfolio
+            </button>
+        </form>
+    </div>
+    {% endif %}
+
+
+    {% if results %}
+    <!-- ================= PORTFOLIO RESULT ================= -->
+    <div class="bg-blue-50 border border-blue-200 rounded-xl p-6">
+        <h2 class="text-xl font-semibold mb-4">📦 Portfolio Result</h2>
+
+        <div class="space-y-2">
+            {% for item, value in results.items() %}
+                <div class="flex justify-between border-b pb-1">
+                    <span>{{ item }}</span>
+                    <span class="font-semibold">{{ value }}</span>
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="mt-4 text-right font-bold">
+            โปรตีนต่อมื้อ: {{ protein_per_meal }} g
+        </div>
+    </div>
+    {% endif %}
+
+
+    {% if error %}
+    <div class="bg-red-50 border border-red-200 rounded-xl p-4 mt-6 text-red-600">
+        {{ error }}
+    </div>
+    {% endif %}
+
+</div>
+
+
+<!-- ===== reusable styles ===== -->
+<style>
+.input-style {
+    @apply border rounded-lg p-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400;
+}
+
+.btn-primary {
+    @apply bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition;
+}
+
+.result-box {
+    @apply bg-white p-3 rounded-lg shadow-sm;
+}
+</style>
 
 </body>
 </html>
