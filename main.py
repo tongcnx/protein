@@ -251,7 +251,7 @@ def login(
         value=access_token,
         httponly=True,
         samesite="lax",
-        secure=False  # Render ใช้ https
+        secure=True  # Render ใช้ https
     )
 
     return response
