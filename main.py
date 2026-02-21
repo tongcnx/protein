@@ -31,10 +31,8 @@ def get_db():
         db.close()
 
 @app.get("/", response_class=HTMLResponse)
-def home(
-    request: Request,
-    user=Depends(get_current_user)
-):
+def home(request: Request):
+
     return templates.TemplateResponse("index.html", {
         "request": request,
         "weight": "",
