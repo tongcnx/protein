@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, Form, Depends, HTTPException
+from fastapi import FastAPI, Request, Form, Depends, HTTPException, Cookie
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
@@ -30,9 +30,11 @@ def get_db():
     finally:
         db.close()
 
-@app.get("/", response_class=HTMLResponse)
-def home(request: Request):
-
+@app.get("/dashboard", response_class=HTMLResponse)
+def dashboard(
+    request: Request,
+    user=Depends(get_current_user)
+):
     return templates.TemplateResponse("index.html", {
         "request": request,
         "weight": "",
@@ -42,7 +44,6 @@ def home(request: Request):
         "activity": "1.2",
         "goal": "maintain"
     })
-
 
 
 @app.post("/calculate", response_class=HTMLResponse)
@@ -244,7 +245,7 @@ def login(
 
     access_token = create_access_token({"sub": user.email})
 
-    response = RedirectResponse(url="/", status_code=303)
+    response = RedirectResponse(url="/dashboard", status_code=303)
     response.set_cookie(
         key="token",
         value=access_token,
@@ -257,7 +258,13 @@ def login(
 
 
 @app.get("/login", response_class=HTMLResponse)
-def login_page(request: Request):
+def login_page(
+    request: Request,
+    token: str | None = Cookie(default=None)
+):
+    if token:
+        return RedirectResponse("/dashboard", status_code=303)
+
     return templates.TemplateResponse("login.html", {"request": request})
 
 
@@ -265,3 +272,17 @@ def login_page(request: Request):
 def register_page(request: Request):
     return templates.TemplateResponse("register.html", {"request": request})
 
+
+@app.get("/", response_class=HTMLResponse)
+def root(request: Request, token: str | None = Cookie(default=None)):
+
+    if not token:
+        return RedirectResponse("/login", status_code=303)
+
+    return RedirectResponse("/dashboard", status_code=303)
+
+@app.get("/logout")
+def logout():
+    response = RedirectResponse("/login", status_code=303)
+    response.delete_cookie("token")
+    return response
