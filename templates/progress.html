@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>Progress</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body class="bg-gray-100 min-h-screen p-8">
+
+<div class="max-w-5xl mx-auto bg-white p-6 rounded-xl shadow">
+
+    <div class="flex justify-between mb-6">
+        <h2 class="text-xl font-bold">📈 Weekly Progress</h2>
+        <a href="/dashboard" class="text-blue-600">← Back</a>
+    </div>
+
+    {% if records %}
+
+    <canvas id="weightChart" class="mb-8"></canvas>
+    <canvas id="costChart"></canvas>
+
+    <script>
+        const labels = [
+            {% for r in records %}
+                "{{ r.week_label }}",
+            {% endfor %}
+        ];
+
+        const weightData = [
+            {% for r in records %}
+                {{ r.weight }},
+            {% endfor %}
+        ];
+
+        const costData = [
+            {% for r in records %}
+                {{ r.total_cost }},
+            {% endfor %}
+        ];
+
+        new Chart(document.getElementById("weightChart"), {
+            type: "line",
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: "Weight",
+                    data: weightData
+                }]
+            }
+        });
+
+        new Chart(document.getElementById("costChart"), {
+            type: "line",
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: "Weekly Cost",
+                    data: costData
+                }]
+            }
+        });
+    </script>
+
+    {% else %}
+        <p class="text-gray-500">ยังไม่มีข้อมูล</p>
+    {% endif %}
+
+</div>
+
+</body>
+</html>
