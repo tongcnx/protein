@@ -250,7 +250,7 @@ def login(
         key="token",
         value=access_token,
         httponly=True,
-        samesite="lax",
+        samesite="none",
         secure=True  # Render ใช้ https
     )
 
