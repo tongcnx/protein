@@ -37,11 +37,6 @@ def home(
 ):
     return templates.TemplateResponse("index.html", {
         "request": request,
-        ...
-    })
-
-    return templates.TemplateResponse("index.html", {
-        "request": request,
         "weight": "",
         "height": "",
         "age": "",
