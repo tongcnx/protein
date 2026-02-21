@@ -55,6 +55,7 @@ def home(
 @app.post("/calculate", response_class=HTMLResponse)
 def calculate(
     request: Request,
+    user=Depends(get_current_user),
     weight: float = Form(...),
     height: float = Form(...),
     age: int = Form(...),
@@ -97,6 +98,7 @@ def calculate(
 @app.post("/portfolio", response_class=HTMLResponse)
 def portfolio(
     request: Request,
+    user=Depends(get_current_user),
     weekly_protein: float = Form(...),
     meals_per_day: int = Form(...),
     weight: float = Form(...),
