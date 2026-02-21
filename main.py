@@ -197,8 +197,15 @@ def register(
     request: Request,
     email: str = Form(...),
     password: str = Form(...),
+    confirm_password: str = Form(...),
     db: Session = Depends(get_db)
 ):
+    if password != confirm_password:
+        return templates.TemplateResponse("register.html", {
+            "request": request,
+            "error": "Passwords do not match"
+        })
+
     user = db.query(User).filter(User.email == email).first()
     if user:
         return templates.TemplateResponse("register.html", {
@@ -211,6 +218,7 @@ def register(
     db.commit()
 
     return RedirectResponse(url="/login", status_code=303)
+
 
 
 @app.post("/login")
