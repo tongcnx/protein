@@ -235,7 +235,6 @@ def login(
     password: str = Form(...),
     db: Session = Depends(get_db)
 ):
-
     user = db.query(User).filter(User.email == email).first()
     if not user or not verify_password(password, user.password):
         return templates.TemplateResponse("login.html", {
@@ -245,16 +244,20 @@ def login(
 
     access_token = create_access_token({"sub": user.email})
 
-    response = RedirectResponse(url="/dashboard", status_code=303)
+    response = templates.TemplateResponse("login_success.html", {
+        "request": request
+    })
+
     response.set_cookie(
         key="token",
         value=access_token,
         httponly=True,
         samesite="none",
-        secure=True  # Render ใช้ https
+        secure=True
     )
 
     return response
+
 
 
 @app.get("/login", response_class=HTMLResponse)
