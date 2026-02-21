@@ -111,6 +111,7 @@ def portfolio(
 
     activity_value = float(activity)
 
+
     # ===== BMR =====
     if gender == "male":
         bmr = 10*weight + 6.25*height - 5*age + 5
@@ -180,6 +181,29 @@ def portfolio(
         total_cost += cost
         results[food] = f"{round(grams_needed,1)} g (~{round(cost,0)} บาท)"
         chart_data[food] = round(grams_needed, 1)
+
+    # ===== SAVE WEEKLY RECORD =====
+    from datetime import datetime
+    from models import WeeklyRecord
+
+    week_label = datetime.utcnow().strftime("Week %W - %Y")
+
+    db = SessionLocal()
+    user_obj = db.query(User).filter(User.email == user).first()
+
+    new_record = WeeklyRecord(
+        user_id=user_obj.id,
+        week_label=week_label,
+        weight=weight,
+        weekly_protein=weekly_protein,
+        total_cost=total_cost
+    )
+
+    db.add(new_record)
+    db.commit()
+    db.close()
+
+    # ===== RETURN TEMPLATE =====
 
     return templates.TemplateResponse("index.html", {
         "request": request,
@@ -283,6 +307,24 @@ def root(request: Request, token: str | None = Cookie(default=None)):
         return RedirectResponse("/login", status_code=303)
 
     return RedirectResponse("/dashboard", status_code=303)
+
+@app.get("/progress", response_class=HTMLResponse)
+def progress(request: Request, user=Depends(get_current_user)):
+
+    db = SessionLocal()
+    user_obj = db.query(User).filter(User.email == user).first()
+
+    records = db.query(WeeklyRecord).filter(
+        WeeklyRecord.user_id == user_obj.id
+    ).order_by(WeeklyRecord.id).all()
+
+    db.close()
+
+    return templates.TemplateResponse("progress.html", {
+        "request": request,
+        "records": records
+    })
+
 
 @app.get("/logout")
 def logout():
