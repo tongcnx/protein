@@ -8,6 +8,8 @@ from auth import hash_password, verify_password, create_access_token
 from database import Base
 from jose import jwt
 from fastapi.staticfiles import StaticFiles
+from dependencies import get_current_user
+
 
 
 import random
@@ -29,11 +31,14 @@ def get_db():
         db.close()
 
 @app.get("/", response_class=HTMLResponse)
-def home(request: Request):
-    token = request.cookies.get("token")
-
-    if not token:
-        return RedirectResponse(url="/login")
+def home(
+    request: Request,
+    user=Depends(get_current_user)
+):
+    return templates.TemplateResponse("index.html", {
+        "request": request,
+        ...
+    })
 
     return templates.TemplateResponse("index.html", {
         "request": request,
@@ -245,7 +250,13 @@ def login(
     access_token = create_access_token({"sub": user.email})
 
     response = RedirectResponse(url="/", status_code=303)
-    response.set_cookie(key="token", value=access_token, httponly=True)
+    response.set_cookie(
+        key="token",
+        value=access_token,
+        httponly=True,
+        samesite="lax",
+        secure=True  # Render ใช้ https
+    )
 
     return response
 
