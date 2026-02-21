@@ -7,13 +7,19 @@ from models import User
 from auth import hash_password, verify_password, create_access_token
 from database import Base
 from jose import jwt
+from fastapi.staticfiles import StaticFiles
+
 
 import random
 
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 templates = Jinja2Templates(directory="templates")
+
 
 def get_db():
     db = SessionLocal()
