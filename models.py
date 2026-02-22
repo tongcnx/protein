@@ -2,6 +2,10 @@ from sqlalchemy import Column, Integer, String
 from database import Base
 from sqlalchemy import Column, Integer, String, Float, ForeignKey
 from sqlalchemy.orm import relationship
+from datetime import datetime
+from sqlalchemy import DateTime
+
+created_at = Column(DateTime, default=datetime.utcnow)
 
 class WeeklyRecord(Base):
     __tablename__ = "weekly_records"
@@ -12,6 +16,7 @@ class WeeklyRecord(Base):
     weight = Column(Float)
     weekly_protein = Column(Float)
     total_cost = Column(Float)
+        created_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User")
 

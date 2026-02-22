@@ -186,7 +186,13 @@ def portfolio(
     from datetime import datetime
     from models import WeeklyRecord
 
-    week_label = datetime.utcnow().strftime("Week %W - %Y")
+    new_record = WeeklyRecord(
+        user_id=user_obj.id,
+        weight=weight,
+        weekly_protein=weekly_protein,
+        total_cost=total_cost
+    )
+
 
     db = SessionLocal()
     user_obj = db.query(User).filter(User.email == user).first()

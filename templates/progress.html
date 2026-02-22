@@ -24,7 +24,7 @@
     <script>
         const labels = [
             {% for r in records %}
-                "{{ r.week_label }}",
+                "{{ r.created_at.strftime('%d %b %Y') }}",
             {% endfor %}
         ];
 
