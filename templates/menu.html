@@ -25,16 +25,17 @@
                placeholder="Budget (optional)"
                class="border p-2 rounded">
 
-        <!-- 🔥 ปุ่มอยู่ใน form เดียวกัน -->
         <div class="flex gap-4">
-            <button formaction="/generate-menu"
+            <button type="submit"
+                    formaction="/generate-menu"
                     class="bg-blue-600 text-white p-2 rounded w-full">
-                Normal Mode
+                Generate (1 Day)
             </button>
 
-            <button formaction="/generate-god-mode"
+            <button type="submit"
+                    formaction="/generate-god-mode"
                     class="bg-purple-600 text-white p-2 rounded w-full">
-                GOD MODE (7 Days)
+                Generate Week Plan
             </button>
         </div>
 
@@ -43,7 +44,6 @@
     {% if result %}
         <div class="bg-gray-50 p-4 rounded">
             <h3 class="font-semibold mb-2">Result</h3>
-
             <p>Calories: {{ result.total_cal }}</p>
             <p>Protein: {{ result.total_protein }}</p>
             <p>Cost: {{ result.total_cost }}</p>

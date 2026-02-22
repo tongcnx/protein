@@ -404,15 +404,60 @@ def generate_menu(
     calorie_target: float = Form(...),
     protein_target: float = Form(...),
     budget: float = Form(None),
+    user=Depends(get_current_user)
 ):
+
     result = generate_optimized_menu(calorie_target, protein_target, budget)
+
+    db = SessionLocal()
+    user_obj = db.query(User).filter(User.email == user).first()
+
+    mealplan = MealPlan(
+        user_id=user_obj.id,
+        calorie_target=calorie_target,
+        protein_target=protein_target,
+        total_calories=result["total_cal"],
+        total_protein=result["total_protein"],
+        total_cost=result["total_cost"],
+    )
+
+    db.add(mealplan)
+    db.commit()
+    db.refresh(mealplan)
+
+    for item in result["menu"]:
+        db_item = MealItem(
+            mealplan_id=mealplan.id,
+            food_name=item["name"],
+            calories=item["calories"],
+            protein=item["protein"],
+            cost=item["price"],
+        )
+        db.add(db_item)
+
+    db.commit()
+    db.close()
 
     return templates.TemplateResponse(
         "menu.html",
-        {
-            "request": request,
-            "result": result
-        }
+        {"request": request, "result": result}
+    )
+
+@app.get("/meal-history", response_class=HTMLResponse)
+def meal_history(request: Request, user=Depends(get_current_user)):
+
+    db = SessionLocal()
+    user_obj = db.query(User).filter(User.email == user).first()
+
+    plans = db.query(MealPlan).filter(
+        MealPlan.user_id == user_obj.id
+    ).order_by(MealPlan.created_at.desc()).all()
+
+    db.close()
+
+    return templates.TemplateResponse(
+        "meal_history.html",
+        {"request": request, "plans": plans}
     )
 
 
