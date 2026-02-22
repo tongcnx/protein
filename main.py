@@ -316,14 +316,25 @@ def progress(request: Request, user=Depends(get_current_user)):
 
     records = db.query(WeeklyRecord).filter(
         WeeklyRecord.user_id == user_obj.id
-    ).order_by(WeeklyRecord.id).all()
+    ).order_by(WeeklyRecord.created_at).all()
 
     db.close()
 
+    labels = [r.created_at.strftime("%d %b") for r in records]
+    estimated = [round(r.total_cost, 2) for r in records]
+    actual = [
+        round(r.actual_cost, 2) if r.actual_cost else None
+        for r in records
+    ]
+
     return templates.TemplateResponse("progress.html", {
         "request": request,
-        "records": records
+        "records": records,
+        "labels": labels,
+        "estimated": estimated,
+        "actual": actual
     })
+
 
 
 @app.get("/logout")
@@ -351,4 +362,33 @@ def update_actual(
     db.close()
 
     return RedirectResponse("/progress", status_code=303)
+
+
+@app.get("/profile", response_class=HTMLResponse)
+def profile(request: Request, user=Depends(get_current_user)):
+
+    db = SessionLocal()
+    user_obj = db.query(User).filter(User.email == user).first()
+
+    records = db.query(WeeklyRecord).filter(
+        WeeklyRecord.user_id == user_obj.id
+    ).all()
+
+    db.close()
+
+    total_weeks = len(records)
+    total_estimated = sum(r.total_cost for r in records)
+    total_actual = sum(r.actual_cost for r in records if r.actual_cost)
+
+    avg_estimated = total_estimated / total_weeks if total_weeks else 0
+    avg_actual = total_actual / total_weeks if total_weeks else 0
+
+    return templates.TemplateResponse("profile.html", {
+        "request": request,
+        "user": user_obj,
+        "total_weeks": total_weeks,
+        "avg_estimated": round(avg_estimated, 2),
+        "avg_actual": round(avg_actual, 2)
+    })
+
 

@@ -18,15 +18,14 @@
 
     {% if records %}
 
+    <!-- ===== Weight Chart ===== -->
     <canvas id="weightChart" class="mb-8"></canvas>
-    <canvas id="costChart"></canvas>
+
+    <!-- ===== Cost Comparison Chart ===== -->
+    <canvas id="costChart" class="mb-8"></canvas>
 
     <script>
-        const labels = [
-            {% for r in records %}
-                "{{ r.created_at.strftime('%d %b %Y') }}",
-            {% endfor %}
-        ];
+        const labels = {{ labels | tojson }};
 
         const weightData = [
             {% for r in records %}
@@ -34,90 +33,117 @@
             {% endfor %}
         ];
 
-        const costData = [
-            {% for r in records %}
-                {{ r.total_cost }},
-            {% endfor %}
-        ];
+        const estimatedData = {{ estimated | tojson }};
+        const actualData = {{ actual | tojson }};
 
+        // Weight Graph
         new Chart(document.getElementById("weightChart"), {
             type: "line",
             data: {
                 labels: labels,
                 datasets: [{
-                    label: "Weight",
-                    data: weightData
+                    label: "Weight (kg)",
+                    data: weightData,
+                    borderWidth: 2,
+                    tension: 0.3
                 }]
             }
         });
 
+        // Estimated vs Actual Graph
         new Chart(document.getElementById("costChart"), {
             type: "line",
             data: {
                 labels: labels,
-                datasets: [{
-                    label: "Weekly Cost",
-                    data: costData
-                }]
+                datasets: [
+                    {
+                        label: "Estimated Cost",
+                        data: estimatedData,
+                        borderWidth: 2,
+                        tension: 0.3
+                    },
+                    {
+                        label: "Actual Cost",
+                        data: actualData,
+                        borderWidth: 2,
+                        tension: 0.3
+                    }
+                ]
             }
         });
+
     </script>
 
     {% else %}
         <p class="text-gray-500">ยังไม่มีข้อมูล</p>
     {% endif %}
 
-</div>
+    <!-- ===== Update Actual Cost ===== -->
+    <h3 class="text-lg font-semibold mt-8 mb-4">
+        บันทึกค่าใช้จ่ายจริง
+    </h3>
 
-<h3 class="text-lg font-semibold mt-8 mb-4">
-    บันทึกค่าใช้จ่ายจริง
-</h3>
+    <form action="/update-actual" method="post" class="flex gap-4">
 
-<form action="/update-actual" method="post" class="flex gap-4">
+        <select name="record_id" class="border rounded px-3 py-2">
+            {% for r in records %}
+                <option value="{{ r.id }}">
+                    {{ r.created_at.strftime('%d %b %Y') }}
+                </option>
+            {% endfor %}
+        </select>
 
-    <select name="record_id" class="border rounded px-3 py-2">
+        <input type="number" step="0.01" name="actual_cost"
+               placeholder="ค่าใช้จ่ายจริง"
+               class="border rounded px-3 py-2" required>
+
+        <button class="bg-green-600 text-white px-4 rounded">
+            บันทึก
+        </button>
+    </form>
+
+    <!-- ===== Table ===== -->
+    <table class="w-full mt-6 border">
+        <tr class="bg-gray-100">
+            <th class="p-2">Date</th>
+            <th class="p-2">Estimated</th>
+            <th class="p-2">Actual</th>
+            <th class="p-2">Diff</th>
+        </tr>
+
         {% for r in records %}
-            <option value="{{ r.id }}">
+        <tr class="text-center border-t">
+            <td class="p-2">
                 {{ r.created_at.strftime('%d %b %Y') }}
-            </option>
+            </td>
+
+            <td>
+                {{ "%.2f"|format(r.total_cost) }}
+            </td>
+
+            <td>
+                {% if r.actual_cost %}
+                    {{ "%.2f"|format(r.actual_cost) }}
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+
+            <td>
+                {% if r.actual_cost %}
+                    {% set diff = r.actual_cost - r.total_cost %}
+                    <span class="{% if diff > 0 %}text-red-600{% else %}text-green-600{% endif %}">
+                        {{ "%.2f"|format(diff) }}
+                    </span>
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+        </tr>
         {% endfor %}
-    </select>
+    </table>
 
-    <input type="number" step="0.01" name="actual_cost"
-           placeholder="ค่าใช้จ่ายจริง"
-           class="border rounded px-3 py-2" required>
-
-    <button class="bg-green-600 text-white px-4 rounded">
-        บันทึก
-    </button>
-</form>
-
-<table class="w-full mt-6 border">
-<tr class="bg-gray-100">
-    <th class="p-2">Date</th>
-    <th class="p-2">Estimated</th>
-    <th class="p-2">Actual</th>
-    <th class="p-2">Diff</th>
-</tr>
-
-{% for r in records %}
-<tr class="text-center border-t">
-    <td class="p-2">
-        {{ r.created_at.strftime('%d %b %Y') }}
-    </td>
-    <td>{{ r.total_cost }}</td>
-    <td>{{ r.actual_cost or '-' }}</td>
-    <td>
-        {% if r.actual_cost %}
-            {{ r.actual_cost - r.total_cost }}
-        {% else %}
-            -
-        {% endif %}
-    </td>
-</tr>
-{% endfor %}
-</table>
-
+</div>
 
 </body>
 </html>
