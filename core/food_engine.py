@@ -48,5 +48,36 @@ def calculate_portfolio(weekly_protein, food_percentages, meals_per_day):
 
     return results
 
+def generate_optimized_menu(calorie_target, protein_target, budget=None):
+    foods = load_foods()
 
-    return results
+    foods = sorted(
+        foods,
+        key=lambda x: x["protein"] / x["price"],
+        reverse=True
+    )
+
+    total_cal = 0
+    total_protein = 0
+    total_cost = 0
+    menu = []
+
+    for food in foods:
+        while (
+            total_protein < protein_target
+            and total_cal + food["calories"] <= calorie_target
+        ):
+            if budget and (total_cost + food["price"] > budget):
+                break
+
+            menu.append(food)
+            total_cal += food["calories"]
+            total_protein += food["protein"]
+            total_cost += food["price"]
+
+    return {
+        "menu": menu,
+        "total_cal": round(total_cal, 2),
+        "total_protein": round(total_protein, 2),
+        "total_cost": round(total_cost, 2),
+    }

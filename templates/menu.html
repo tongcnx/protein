@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Menu Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 min-h-screen p-8">
+
+<div class="max-w-3xl mx-auto bg-white p-6 rounded shadow">
+
+    <h2 class="text-xl font-bold mb-6">🥗 Smart Menu Generator</h2>
+
+    <form method="post" class="grid gap-4 mb-6">
+
+        <input type="number" step="0.1" name="calorie_target"
+               placeholder="Target Calories"
+               class="border p-2 rounded" required>
+
+        <input type="number" step="0.1" name="protein_target"
+               placeholder="Target Protein (g)"
+               class="border p-2 rounded" required>
+
+        <input type="number" step="0.1" name="budget"
+               placeholder="Budget (optional)"
+               class="border p-2 rounded">
+
+        <!-- 🔥 ปุ่มอยู่ใน form เดียวกัน -->
+        <div class="flex gap-4">
+            <button formaction="/generate-menu"
+                    class="bg-blue-600 text-white p-2 rounded w-full">
+                Normal Mode
+            </button>
+
+            <button formaction="/generate-god-mode"
+                    class="bg-purple-600 text-white p-2 rounded w-full">
+                GOD MODE (7 Days)
+            </button>
+        </div>
+
+    </form>
+
+    {% if result %}
+        <div class="bg-gray-50 p-4 rounded">
+            <h3 class="font-semibold mb-2">Result</h3>
+
+            <p>Calories: {{ result.total_cal }}</p>
+            <p>Protein: {{ result.total_protein }}</p>
+            <p>Cost: {{ result.total_cost }}</p>
+
+            <ul class="mt-4 list-disc pl-6">
+                {% for item in result.menu %}
+                    <li>{{ item.name }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    {% if week %}
+        <div class="mt-6">
+        {% for day in week %}
+            <div class="bg-gray-50 p-4 rounded mb-4">
+                <h3 class="font-bold">Day {{ loop.index }}</h3>
+
+                <p>Calories: {{ day.total_cal }}</p>
+                <p>Protein: {{ day.total_protein }}</p>
+                <p>Cost: {{ day.total_cost }}</p>
+
+                <ul class="list-disc pl-6">
+                    {% for item in day.menu %}
+                        <li>{{ item.name }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endfor %}
+        </div>
+    {% endif %}
+
+</div>
+
+</body>
+</html>

@@ -9,6 +9,8 @@ from database import Base
 from jose import jwt
 from fastapi.staticfiles import StaticFiles
 from dependencies import get_current_user
+from god_engine import generate_week_plan
+from food_engine import generate_optimized_menu, load_foods
 
 
 
@@ -391,4 +393,46 @@ def profile(request: Request, user=Depends(get_current_user)):
         "avg_actual": round(avg_actual, 2)
     })
 
+@app.get("/menu-generator")
+def menu_page(request: Request):
+    return templates.TemplateResponse("menu.html", {"request": request})
+
+
+@app.post("/generate-menu")
+def generate_menu(
+    request: Request,
+    calorie_target: float = Form(...),
+    protein_target: float = Form(...),
+    budget: float = Form(None),
+):
+    result = generate_optimized_menu(calorie_target, protein_target, budget)
+
+    return templates.TemplateResponse(
+        "menu.html",
+        {
+            "request": request,
+            "result": result
+        }
+    )
+
+
+@app.post("/generate-god-mode")
+def generate_god_mode(
+    request: Request,
+    calorie_target: float = Form(...),
+    protein_target: float = Form(...),
+    budget: float = Form(None),
+):
+
+    foods = load_foods()
+
+    week = generate_week_plan(foods, calorie_target, protein_target, budget)
+
+    return templates.TemplateResponse(
+        "menu.html",
+        {
+            "request": request,
+            "week": week
+        }
+    )
 
