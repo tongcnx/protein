@@ -337,3 +337,24 @@ def logout():
     response = RedirectResponse("/login", status_code=303)
     response.delete_cookie("token")
     return response
+
+@app.post("/update-actual")
+def update_actual(
+    record_id: int = Form(...),
+    actual_cost: float = Form(...),
+    user=Depends(get_current_user)
+):
+
+    db = SessionLocal()
+
+    record = db.query(WeeklyRecord).filter(
+        WeeklyRecord.id == record_id
+    ).first()
+
+    record.actual_cost = actual_cost
+
+    db.commit()
+    db.close()
+
+    return RedirectResponse("/progress", status_code=303)
+

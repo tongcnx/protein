@@ -11,12 +11,12 @@ class WeeklyRecord(Base):
     __tablename__ = "weekly_records"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    week_label = Column(String)
+    user_id = Column(Integer)
     weight = Column(Float)
     weekly_protein = Column(Float)
-    total_cost = Column(Float)
-        created_at = Column(DateTime, default=datetime.utcnow)
+    total_cost = Column(Float)  # estimated
+    actual_cost = Column(Float, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User")
 
