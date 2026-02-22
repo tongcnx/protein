@@ -9,8 +9,8 @@ from database import Base
 from jose import jwt
 from fastapi.staticfiles import StaticFiles
 from dependencies import get_current_user
-from god_engine import generate_week_plan
-from food_engine import generate_optimized_menu, load_foods
+from core.food_engine import generate_optimized_menu, load_foods
+from core.god_engine import generate_week_plan
 
 
 
