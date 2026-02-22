@@ -4,3 +4,26 @@
 <p>Total Weeks: {{ total_weeks }}</p>
 <p>Avg Estimated Cost: {{ "%.2f"|format(avg_estimated) }}</p>
 <p>Avg Actual Cost: {{ "%.2f"|format(avg_actual) }}</p>
+
+<h2 class="text-xl font-bold mb-6">📊 Your Meal Plans</h2>
+
+{% for plan in plans %}
+<div class="bg-white shadow rounded p-4 mb-4">
+
+    <p><b>Date:</b> {{ plan.created_at.strftime("%Y-%m-%d") }}</p>
+
+    <p>Target: {{ plan.calorie_target }} kcal / {{ plan.protein_target }} g</p>
+    <p>Actual: {{ plan.total_calories }} kcal / {{ plan.total_protein }} g</p>
+    <p>Cost: {{ "%.2f"|format(plan.total_cost) }}</p>
+
+    {% if plan.protein_split %}
+        <p class="mt-2 font-semibold">Protein Split:</p>
+        <ul class="list-disc pl-6">
+            {% for key, value in plan.protein_split.items() %}
+                <li>{{ key }}: {{ value }}%</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+</div>
+{% endfor %}

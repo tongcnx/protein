@@ -2,8 +2,8 @@ from fastapi import FastAPI, Request, Form, Depends, HTTPException, Cookie
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
-from database import SessionLocal, engine
-from models import User, WeeklyRecord
+from database import SessionLocal, engine, get_db
+from models import User, WeeklyRecord, MealPlan, MealItem
 from auth import hash_password, verify_password, create_access_token
 from database import Base
 from jose import jwt
@@ -11,7 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from dependencies import get_current_user
 from core.food_engine import generate_optimized_menu, load_foods
 from core.god_engine import generate_week_plan
-
+from collections import defaultdict
 
 
 import random
@@ -31,6 +31,16 @@ def get_db():
         yield db
     finally:
         db.close()
+
+def generate_grocery_summary(mealplan):
+
+    summary = defaultdict(lambda: {"amount": 0, "unit": ""})
+
+    for item in mealplan.items:
+        summary[item.food_name]["amount"] += item.amount
+        summary[item.food_name]["unit"] = item.unit
+
+    return summary
 
 @app.get("/dashboard", response_class=HTMLResponse)
 def dashboard(
@@ -367,16 +377,16 @@ def update_actual(
 
 
 @app.get("/profile", response_class=HTMLResponse)
-def profile(request: Request, user=Depends(get_current_user)):
+def profile(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
 
-    db = SessionLocal()
-    user_obj = db.query(User).filter(User.email == user).first()
-
+    # ===== Weekly Records (Cost Analytics)
     records = db.query(WeeklyRecord).filter(
-        WeeklyRecord.user_id == user_obj.id
+        WeeklyRecord.user_id == current_user.id
     ).all()
-
-    db.close()
 
     total_weeks = len(records)
     total_estimated = sum(r.total_cost for r in records)
@@ -385,13 +395,20 @@ def profile(request: Request, user=Depends(get_current_user)):
     avg_estimated = total_estimated / total_weeks if total_weeks else 0
     avg_actual = total_actual / total_weeks if total_weeks else 0
 
+    # ===== Meal Plans (Generated Menus)
+    plans = db.query(MealPlan).filter(
+        MealPlan.user_id == current_user.id
+    ).order_by(MealPlan.created_at.desc()).all()
+
     return templates.TemplateResponse("profile.html", {
         "request": request,
-        "user": user_obj,
+        "user": current_user,
         "total_weeks": total_weeks,
         "avg_estimated": round(avg_estimated, 2),
-        "avg_actual": round(avg_actual, 2)
+        "avg_actual": round(avg_actual, 2),
+        "plans": plans
     })
+
 
 @app.get("/menu-generator")
 def menu_page(request: Request):
@@ -429,11 +446,14 @@ def generate_menu(
         db_item = MealItem(
             mealplan_id=mealplan.id,
             food_name=item["name"],
+            amount=item.get("amount", 1),
+            unit=item.get("unit", "unit"),
             calories=item["calories"],
             protein=item["protein"],
             cost=item["price"],
         )
         db.add(db_item)
+
 
     db.commit()
     db.close()
@@ -481,3 +501,67 @@ def generate_god_mode(
         }
     )
 
+
+@app.get("/grocery/{plan_id}")
+def grocery_page(plan_id: int, request: Request):
+
+    db = SessionLocal()
+    mealplan = db.query(MealPlan).filter(MealPlan.id == plan_id).first()
+
+    summary = generate_grocery_summary(mealplan)
+
+    db.close()
+
+    return templates.TemplateResponse(
+        "grocery.html",
+        {
+            "request": request,
+            "summary": summary,
+            "mealplan": mealplan
+        }
+    )
+
+
+@app.post("/save-week-plan")
+def save_week_plan(
+    calorie_target: float,
+    protein_target: float,
+    total_calories: float,
+    total_protein: float,
+    total_cost: float,
+    protein_split: dict,
+    menu: list,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+
+    mealplan = MealPlan(
+        user_id=current_user.id,
+        calorie_target=calorie_target,
+        protein_target=protein_target,
+        total_calories=round(total_calories, 2),
+        total_protein=round(total_protein, 2),
+        total_cost=round(total_cost, 2),
+        protein_split=protein_split
+    )
+
+    db.add(mealplan)
+    db.commit()
+    db.refresh(mealplan)
+
+    # save items
+    for item in menu:
+        meal_item = MealItem(
+            mealplan_id=mealplan.id,
+            food_name=item["name"],
+            amount=item.get("amount", 1),
+            unit=item.get("unit", "g"),
+            calories=round(item["calories"], 2),
+            protein=round(item["protein"], 2),
+            cost=round(item["cost"], 2)
+        )
+        db.add(meal_item)
+
+    db.commit()
+
+    return {"status": "saved"}

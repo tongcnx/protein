@@ -50,6 +50,8 @@ class MealItem(Base):
     id = Column(Integer, primary_key=True, index=True)
     mealplan_id = Column(Integer, ForeignKey("mealplans.id"))
     food_name = Column(String)
+    amount = Column(Float)          # ✅ เพิ่ม
+    unit = Column(String)           # ✅ เพิ่ม
     calories = Column(Float)
     protein = Column(Float)
     cost = Column(Float)
