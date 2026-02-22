@@ -410,10 +410,15 @@ def profile(
     })
 
 
-@app.get("/menu-generator")
-def menu_page(request: Request):
-    return templates.TemplateResponse("menu.html", {"request": request})
-
+@app.get("/menu-generator", response_class=HTMLResponse)
+def menu_generator(
+    request: Request,
+    current_user: User = Depends(get_current_user)
+):
+    return templates.TemplateResponse(
+        "menu.html",
+        {"request": request}
+    )
 
 @app.post("/generate-menu")
 def generate_menu(
@@ -421,16 +426,14 @@ def generate_menu(
     calorie_target: float = Form(...),
     protein_target: float = Form(...),
     budget: float = Form(None),
-    user=Depends(get_current_user)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
 
     result = generate_optimized_menu(calorie_target, protein_target, budget)
 
-    db = SessionLocal()
-    user_obj = db.query(User).filter(User.email == user).first()
-
     mealplan = MealPlan(
-        user_id=user_obj.id,
+        user_id=current_user.id,   # ✅ ใช้ object ตรง ๆ
         calorie_target=calorie_target,
         protein_target=protein_target,
         total_calories=result["total_cal"],
@@ -454,14 +457,17 @@ def generate_menu(
         )
         db.add(db_item)
 
-
     db.commit()
-    db.close()
 
     return templates.TemplateResponse(
         "menu.html",
-        {"request": request, "result": result}
+        {
+            "request": request,
+            "result": result
+        }
     )
+
+
 
 @app.get("/meal-history", response_class=HTMLResponse)
 def meal_history(request: Request, user=Depends(get_current_user)):
