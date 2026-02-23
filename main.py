@@ -624,15 +624,30 @@ def generate_from_portfolio(
 
     foods_dict = load_foods()
 
-    foods = [
-        {
-            "name": name,
-            "protein": data["protein"],
-            "calories": data["calories"],
-            "price": data["price"]
-        }
-        for name, data in foods_dict.items()
-    ]
+    protein_split = {
+        "chicken": chicken_percent,
+        "pork": pork_percent,
+        "beef": beef_percent,
+        "egg": egg_percent,
+        "fish": fish_percent,
+        "whey": whey_percent,
+    }
+
+    foods = []
+
+    for name, data in foods_dict.items():
+
+        percent = protein_split.get(name, 0)
+
+        if percent > 0:   # เอาเฉพาะตัวที่ user เลือก
+            foods.append({
+                "name": name,
+                "protein": data["protein"],
+                "calories": data["calories"],
+                "price": data["price"],
+                "weight_factor": percent / 100
+            })
+
 
     week = generate_week_plan(
         foods,

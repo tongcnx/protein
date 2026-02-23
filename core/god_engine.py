@@ -17,7 +17,7 @@ def generate_day_plan(food_data, calorie_target, protein_target, budget=None):
 
     # คำนวณ score
     for f in expanded_foods:
-        protein_score = f["protein"] / f["price"]
+        protein_score = (f["protein"] / f["price"]) * f.get("weight_factor", 1)
         calorie_penalty = abs(calorie_target - f["calories"])
         f["score"] = protein_score - (calorie_penalty * 0.001)
 
