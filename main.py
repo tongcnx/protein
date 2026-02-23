@@ -633,6 +633,15 @@ def generate_from_portfolio(
         "whey": whey_percent,
     }
 
+    week = generate_week_plan(
+        foods,
+        calorie_target,
+        protein_target,
+        protein_split,
+        None
+    )
+
+
     foods = []
 
     for name, data in foods_dict.items():

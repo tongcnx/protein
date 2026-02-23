@@ -1,73 +1,86 @@
-import random
+def generate_day_plan(food_data, calorie_target, protein_target, protein_split, budget=None):
 
-def generate_day_plan(food_data, calorie_target, protein_target, budget=None):
-
-    expanded_foods = []
-
-    # สร้างหลาย portion
-    for food in food_data:
-        for portion in [0.5, 1, 1.5, 2]:
-            expanded_foods.append({
-                "name": f"{food['name']} x{portion}",
-                "calories": food["calories"] * portion,
-                "protein": food["protein"] * portion,
-                "price": food["price"] * portion,
-                "base": food["name"]
-            })
-
-    # คำนวณ score
-    for f in expanded_foods:
-        protein_score = (f["protein"] / f["price"]) * f.get("weight_factor", 1)
-        calorie_penalty = abs(calorie_target - f["calories"])
-        f["score"] = protein_score - (calorie_penalty * 0.001)
-
-    expanded_foods.sort(key=lambda x: x["score"], reverse=True)
-
+    plan = []
     total_cal = 0
     total_protein = 0
     total_cost = 0
-    menu = []
-    used = set()
 
-    for food in expanded_foods:
+    for food in food_data:
 
-        if total_protein >= protein_target:
-            break
+        name = food["name"]
+        percent = protein_split.get(name, 0) / 100
 
-        if food["base"] in used:
+        if percent <= 0:
             continue
 
-        if total_cal + food["calories"] > calorie_target:
-            continue
+        # 🎯 protein target per source
+        protein_needed = protein_target * percent
 
-        if budget and (total_cost + food["price"] > budget):
-            continue
+        # 🎯 grams required
+        grams = (protein_needed / food["protein"]) * 100
 
-        menu.append(food)
-        used.add(food["base"])
-        total_cal += food["calories"]
-        total_protein += food["protein"]
-        total_cost += food["price"]
+        calories = (grams / 100) * food["calories"]
+        cost = (grams / 100) * food["price"]
+
+        total_cal += calories
+        total_protein += protein_needed
+        total_cost += cost
+
+        plan.append({
+            "name": name,
+            "grams": round(grams, 1),
+            "calories": round(calories, 1),
+            "protein": round(protein_needed, 1),
+            "cost": round(cost, 1)
+        })
+
+    # 🔒 Constraint check
+    if total_cal > calorie_target:
+        reduction_ratio = calorie_target / total_cal
+
+        for item in plan:
+            item["grams"] *= reduction_ratio
+            item["calories"] *= reduction_ratio
+            item["protein"] *= reduction_ratio
+            item["cost"] *= reduction_ratio
+
+        total_cal *= reduction_ratio
+        total_protein *= reduction_ratio
+        total_cost *= reduction_ratio
+
+    if budget and total_cost > budget:
+        reduction_ratio = budget / total_cost
+
+        for item in plan:
+            item["grams"] *= reduction_ratio
+            item["calories"] *= reduction_ratio
+            item["protein"] *= reduction_ratio
+            item["cost"] *= reduction_ratio
+
+        total_cal *= reduction_ratio
+        total_protein *= reduction_ratio
+        total_cost *= reduction_ratio
 
     return {
-        "menu": menu,
+        "menu": plan,
         "total_cal": round(total_cal, 2),
         "total_protein": round(total_protein, 2),
         "total_cost": round(total_cost, 2),
     }
 
 
-def generate_week_plan(food_data, calorie_target, protein_target, budget=None):
+def generate_week_plan(food_data, calorie_target, protein_target, protein_split, budget=None):
+
     week = []
-    history = set()
 
     for _ in range(7):
-        day = generate_day_plan(food_data, calorie_target, protein_target, budget)
-
-        # กันซ้ำข้ามวัน
-        for item in day["menu"]:
-            history.add(item["base"])
-
+        day = generate_day_plan(
+            food_data,
+            calorie_target,
+            protein_target,
+            protein_split,
+            budget
+        )
         week.append(day)
 
     return week
