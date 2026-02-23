@@ -148,18 +148,22 @@ def portfolio(
     if total_percent != 100:
         return templates.TemplateResponse("index.html", {
             "request": request,
-            "error": "เปอร์เซ็นต์รวมต้องเท่ากับ 100%",
-            "weight": weight,
-            "height": height,
-            "age": age,
-            "gender": gender,
-            "activity": activity,
-            "goal": goal,
-            "bmr": round(bmr, 1),
-            "tdee": round(tdee, 1),
-            "daily_protein": round(daily_protein, 1),
-            "weekly_protein": weekly_protein
+            "results": results,
+            "protein_per_meal": protein_per_meal,
+            "total_cost": total_cost,
+            "weekly_protein": weekly_protein,
+            "daily_protein": daily_protein,
+            "tdee": tdee,
+            "protein_split": {
+                "chicken": chicken_percent,
+                "pork": pork_percent,
+                "beef": beef_percent,
+                "egg": egg_percent,
+                "fish": fish_percent,
+                "whey": whey_percent,
+            }
         })
+
 
     protein_sources = {
         "เนื้อไก่": (21, chicken_percent),
@@ -232,7 +236,19 @@ def portfolio(
         "protein_per_meal": round(protein_per_meal, 1),
         "results": results,
         "chart_data": chart_data,
-        "total_cost": round(total_cost, 0)
+        "total_cost": round(total_cost, 0),
+        
+        # ✅ ต้องมีอันนี้
+            "protein_split": {
+                "chicken": chicken_percent,
+                "pork": pork_percent,
+                "beef": beef_percent,
+                "egg": egg_percent,
+                "fish": fish_percent,
+                "whey": whey_percent,
+            }
+        })
+
     })
 
 @app.post("/register")
@@ -571,3 +587,46 @@ def save_week_plan(
     db.commit()
 
     return {"status": "saved"}
+
+
+@app.post("/generate-from-portfolio")
+def generate_from_portfolio(
+    request: Request,
+    calorie_target: float = Form(...),
+    protein_target: float = Form(...),
+    chicken_percent: float = Form(...),
+    pork_percent: float = Form(...),
+    beef_percent: float = Form(...),
+    egg_percent: float = Form(...),
+    fish_percent: float = Form(...),
+    whey_percent: float = Form(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+
+    foods = load_foods()
+
+    protein_split = {
+        "chicken": chicken_percent,
+        "pork": pork_percent,
+        "beef": beef_percent,
+        "egg": egg_percent,
+        "fish": fish_percent,
+        "whey": whey_percent,
+    }
+
+    week = generate_week_plan(
+        foods,
+        calorie_target,
+        protein_target,
+        protein_split
+    )
+
+    return templates.TemplateResponse(
+        "menu.html",
+        {
+            "request": request,
+            "week": week
+        }
+    )
+
