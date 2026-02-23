@@ -513,6 +513,10 @@ def generate_god_mode(
     budget: float = Form(None),
 ):
 
+    from core.food_engine import load_foods
+    from core.god_engine import generate_week_plan
+    from core.meal_suggester import suggest_meals
+
     foods_dict = load_foods()
 
     foods = [
@@ -525,8 +529,17 @@ def generate_god_mode(
         for name, data in foods_dict.items()
     ]
 
-    week = generate_week_plan(foods, calorie_target, protein_target, budget)
+    week = generate_week_plan(
+        foods,
+        calorie_target,
+        protein_target,
+        None,   # no protein split here
+        budget
+    )
 
+    # ✅ เพิ่ม Smart Suggestion
+    for day in week:
+        day["suggested_meals"] = suggest_meals(day)
 
     return templates.TemplateResponse(
         "menu.html",
@@ -535,6 +548,7 @@ def generate_god_mode(
             "week": week
         }
     )
+
 
 
 @app.get("/grocery/{plan_id}")
@@ -621,6 +635,7 @@ def generate_from_portfolio(
 
     from core.food_engine import load_foods
     from core.god_engine import generate_week_plan
+    from core.meal_suggester import suggest_meals
 
     foods_dict = load_foods()
 
@@ -633,6 +648,16 @@ def generate_from_portfolio(
         "whey": whey_percent,
     }
 
+    foods = [
+        {
+            "name": name,
+            "protein": data["protein"],
+            "calories": data["calories"],
+            "price": data["price"]
+        }
+        for name, data in foods_dict.items()
+    ]
+
     week = generate_week_plan(
         foods,
         calorie_target,
@@ -641,29 +666,9 @@ def generate_from_portfolio(
         None
     )
 
-
-    foods = []
-
-    for name, data in foods_dict.items():
-
-        percent = protein_split.get(name, 0)
-
-        if percent > 0:   # เอาเฉพาะตัวที่ user เลือก
-            foods.append({
-                "name": name,
-                "protein": data["protein"],
-                "calories": data["calories"],
-                "price": data["price"],
-                "weight_factor": percent / 100
-            })
-
-
-    week = generate_week_plan(
-        foods,
-        calorie_target,
-        protein_target,
-        None
-    )
+    # ✅ เพิ่ม suggestion ตรงนี้
+    for day in week:
+        day["suggested_meals"] = suggest_meals(day)
 
     return templates.TemplateResponse(
         "menu.html",
