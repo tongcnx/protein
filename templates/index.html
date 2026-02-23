@@ -4,37 +4,51 @@
     <meta charset="UTF-8">
     <title>Protein Weekly Planner</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 </head>
 
 <body class="bg-gray-100 min-h-screen">
 
 <div class="max-w-5xl mx-auto py-10 px-4">
 
-    <div class="flex flex-col items-center mb-10">
+    <div class="flex flex-col items-center mb-12 text-center">
+        <img src="/static/logo.png" class="h-14 mb-4" alt="Protein Planner">
+
+        <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-2">
+            Protein Weekly Optimizer
+        </h1>
+
+        <p class="text-gray-500 max-w-xl">
+            Build cost-efficient, macro-optimized weekly meal plans in minutes.
+        </p>
+    </div>
+
         <img src="/static/logo.png" class="h-14 mb-2" alt="Protein Planner">
         <p class="text-sm text-gray-500">
             Build Your Weekly Protein Plan
         </p>
     </div>
 
-    <div class="w-full flex justify-end mb-4">
-        <a href="/progress"
-           class="mr-3 text-sm text-gray-600 hover:text-blue-600">
-           Progress
+    <div class="w-full flex justify-end items-center mb-8 text-sm space-x-6">
+
+        <a href="/progress" class="text-gray-600 hover:text-black transition">
+            Analytics
         </a>
 
-        <a href="/menu-generator"
-           class="mr-3 text-sm text-gray-600 hover:text-blue-600">
-           Menu Generator
+        <a href="/menu-generator" class="text-gray-600 hover:text-black transition">
+            Menu Engine
         </a>
 
-
-        <a href="/logout"
-           class="text-sm text-red-500 hover:text-red-700">
-           Logout
+        <a href="/profile" class="text-gray-600 hover:text-black transition">
+            Profile
         </a>
-    </div>
+
+        <a href="/logout" class="text-red-500 hover:text-red-700 transition">
+            Logout
+        </a>
+
+</div>
+
 
     <!-- ================= STEP 1 ================= -->
     <div class="bg-white rounded-2xl shadow-lg p-6 md:p-8 mb-8">
@@ -192,75 +206,94 @@
 
     {% if results %}
 
-    <!-- ================= PORTFOLIO RESULT ================= -->
-    <div class="bg-blue-50 border border-blue-200 rounded-xl p-6 mt-8">
+    <!-- ================= PORTFOLIO RESULT (SaaS STYLE) ================= -->
+    <div class="bg-white rounded-2xl shadow-xl p-8 mt-10 border border-gray-100">
 
-        <h2 class="text-xl font-semibold mb-4">📦 Portfolio Result</h2>
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-semibold text-gray-800">
+                Weekly Portfolio Summary
+            </h2>
 
-        <div class="space-y-2">
-            {% for item, value in results.items() %}
-                <div class="flex justify-between border-b pb-1">
-                    <span>{{ item }}</span>
-                    <span class="font-semibold">{{ value }}</span>
+            <span class="text-sm bg-green-100 text-green-700 px-3 py-1 rounded-full">
+                Optimized
+            </span>
+        </div>
+
+        <!-- ===== KPI Cards ===== -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+
+            <div class="bg-gradient-to-br from-blue-50 to-white rounded-2xl p-6 border">
+                <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">
+                    Protein / Meal
+                </p>
+                <p class="text-3xl font-bold text-gray-800">
+                    {{ protein_per_meal }}g
+                </p>
+            </div>
+
+            <div class="bg-gradient-to-br from-green-50 to-white rounded-2xl p-6 border">
+                <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">
+                    Weekly Budget
+                </p>
+                <p class="text-3xl font-bold text-green-600">
+                    ฿ {{ total_cost }}
+                </p>
+            </div>
+
+            <div class="bg-gradient-to-br from-purple-50 to-white rounded-2xl p-6 border">
+                <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">
+                    Weekly Protein
+                </p>
+                <p class="text-3xl font-bold text-gray-800">
+                    {{ weekly_protein }}g
+                </p>
+            </div>
+
+        </div>
+
+
+        <!-- ===== Allocation Bars ===== -->
+        <div class="space-y-4 mb-10">
+
+            {% for food, value in chart_data.items() %}
+            <div>
+                <div class="flex justify-between text-sm mb-1">
+                    <span class="font-medium text-gray-700">{{ food }}</span>
+                    <span class="text-gray-500">{{ value }} g</span>
                 </div>
+
+                <div class="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
+                    <div class="bg-gradient-to-r from-blue-500 to-indigo-600 h-3 rounded-full transition-all duration-500"
+                         style="width: {{ (value / weekly_protein * 100) | round(0) }}%">
+                    </div>
+                </div>
+
+            </div>
             {% endfor %}
+
         </div>
 
-        <div class="mt-4 text-right font-bold">
-            โปรตีนต่อมื้อ: {{ protein_per_meal }} g
-        </div>
+        <!-- ===== Generate Button ===== -->
+        <form action="/generate-from-portfolio" method="post">
 
-        <div class="mt-4 text-right text-lg font-bold text-green-600">
-            งบประมาณต่อสัปดาห์: {{ total_cost }} บาท
-        </div>
+            <input type="hidden" name="calorie_target" value="{{ tdee }}">
+            <input type="hidden" name="protein_target" value="{{ daily_protein }}">
 
-        {% if chart_data %}
-        <div class="mt-6">
-            <canvas id="proteinChart"></canvas>
-        </div>
+            {% for key, value in protein_split.items() %}
+                <input type="hidden" name="{{ key }}_percent" value="{{ value }}">
+            {% endfor %}
 
-        <script>
-        const ctx = document.getElementById('proteinChart');
+            <button class="w-full bg-black text-white py-4 rounded-2xl text-lg font-semibold
+                           hover:bg-gray-900 transition duration-200
+                           shadow-xl hover:shadow-2xl">
+                🚀 Generate Optimized Weekly Plan
+            </button>
 
-        new Chart(ctx, {
-            type: 'pie',
-            data: {
-                labels: {{ chart_data.keys()|list|safe }},
-                datasets: [{
-                    data: {{ chart_data.values()|list|safe }},
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: { position: 'bottom' }
-                }
-            }
-        });
-        </script>
-        {% endif %}
+
+        </form>
 
     </div>
 
-    <form action="/generate-from-portfolio" method="post" class="mt-6">
-
-        <input type="hidden" name="calorie_target" value="{{ tdee }}">
-        <input type="hidden" name="protein_target" value="{{ daily_protein }}">
-
-        {% for key, value in protein_split.items() %}
-            <input type="hidden" name="{{ key }}_percent" value="{{ value }}">
-        {% endfor %}
-
-        <button class="w-full bg-green-600 text-white py-3 rounded-xl hover:bg-green-700">
-            🔥 Generate Week Plan From This Portfolio
-        </button>
-
-    </form>
-
-
-    {% endif %}
-
-</div>
 
 
 <script>
