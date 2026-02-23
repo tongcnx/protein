@@ -249,7 +249,6 @@ def portfolio(
             }
         })
 
-    })
 
 @app.post("/register")
 def register(
