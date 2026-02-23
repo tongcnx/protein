@@ -631,6 +631,8 @@ def generate_from_portfolio(
     egg_percent: float = Form(0),
     fish_percent: float = Form(0),
     whey_percent: float = Form(0),
+
+    meal_style: str = Form("thai"),
 ):
 
     from core.food_engine import load_foods
@@ -666,14 +668,15 @@ def generate_from_portfolio(
         None
     )
 
-    # ✅ เพิ่ม suggestion ตรงนี้
+    # ✅ Smart suggestion based on style
     for day in week:
-        day["suggested_meals"] = suggest_meals(day)
+        day["suggested_meals"] = suggest_meals(day, meal_style)
 
     return templates.TemplateResponse(
-        "menu.html",
+        "weekly_plan.html",
         {
             "request": request,
-            "week": week
+            "week": week,
+            "meal_style": meal_style
         }
     )
