@@ -513,9 +513,20 @@ def generate_god_mode(
     budget: float = Form(None),
 ):
 
-    foods = load_foods()
+    foods_dict = load_foods()
+
+    foods = [
+        {
+            "name": name,
+            "protein": data["protein"],
+            "calories": data["calories"],
+            "price": data["price"]
+        }
+        for name, data in foods_dict.items()
+    ]
 
     week = generate_week_plan(foods, calorie_target, protein_target, budget)
+
 
     return templates.TemplateResponse(
         "menu.html",

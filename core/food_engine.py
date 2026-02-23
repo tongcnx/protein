@@ -1,8 +1,39 @@
 import json
 
 def load_foods():
-    with open("data/food_database.json", "r", encoding="utf-8") as f:
-        return json.load(f)
+    return {
+        "chicken": {
+            "protein": 31,
+            "calories": 165,
+            "price": 60
+        },
+        "pork": {
+            "protein": 27,
+            "calories": 242,
+            "price": 80
+        },
+        "beef": {
+            "protein": 26,
+            "calories": 250,
+            "price": 120
+        },
+        "egg": {
+            "protein": 6,
+            "calories": 70,
+            "price": 5
+        },
+        "fish": {
+            "protein": 22,
+            "calories": 206,
+            "price": 90
+        },
+        "whey": {
+            "protein": 24,
+            "calories": 120,
+            "price": 35
+        }
+    }
+
 
 
 def calculate_food_requirements(weekly_protein):
@@ -65,13 +96,13 @@ def generate_optimized_menu(calorie_target, protein_target, budget=None):
     for food in foods:
         while (
             total_protein < protein_target
-            and total_cal + food["calories"] <= calorie_target
+            and total_cal + food.get("calories", 0) <= calorie_target
         ):
             if budget and (total_cost + food["price"] > budget):
                 break
 
             menu.append(food)
-            total_cal += food["calories"]
+            total_cal += food.get("calories", 0)
             total_protein += food["protein"]
             total_cost += food["price"]
 
