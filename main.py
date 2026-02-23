@@ -619,27 +619,32 @@ def generate_from_portfolio(
     whey_percent: float = Form(0),
 ):
 
-    user_obj = db.query(User).filter(User.email == user).first()
+    from core.food_engine import load_foods
+    from core.god_engine import generate_week_plan
 
-    percent_total = (
-        chicken_percent + pork_percent + beef_percent +
-        egg_percent + fish_percent + whey_percent
+    foods_dict = load_foods()
+
+    foods = [
+        {
+            "name": name,
+            "protein": data["protein"],
+            "calories": data["calories"],
+            "price": data["price"]
+        }
+        for name, data in foods_dict.items()
+    ]
+
+    week = generate_week_plan(
+        foods,
+        calorie_target,
+        protein_target,
+        None
     )
 
-    if percent_total != 100:
-        return HTMLResponse("Percent total must equal 100", status_code=400)
-
-    # ตัวอย่าง logic
-    weekly_protein = protein_target * 7
-
-    plan = MealPlan(
-        user_id=user_obj.id,
-        calorie_target=calorie_target,
-        protein_target=protein_target,
-        total_cost=0
+    return templates.TemplateResponse(
+        "menu.html",
+        {
+            "request": request,
+            "week": week
+        }
     )
-
-    db.add(plan)
-    db.commit()
-
-    return RedirectResponse("/profile", status_code=303)
