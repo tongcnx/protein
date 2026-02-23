@@ -594,41 +594,41 @@ def save_week_plan(
 @app.post("/generate-from-portfolio")
 def generate_from_portfolio(
     request: Request,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+
     calorie_target: float = Form(...),
     protein_target: float = Form(...),
-    chicken_percent: float = Form(...),
-    pork_percent: float = Form(...),
-    beef_percent: float = Form(...),
-    egg_percent: float = Form(...),
-    fish_percent: float = Form(...),
-    whey_percent: float = Form(...),
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+
+    chicken_percent: float = Form(0),
+    pork_percent: float = Form(0),
+    beef_percent: float = Form(0),
+    egg_percent: float = Form(0),
+    fish_percent: float = Form(0),
+    whey_percent: float = Form(0),
 ):
 
-    foods = load_foods()
+    user_obj = db.query(User).filter(User.email == user).first()
 
-    protein_split = {
-        "chicken": chicken_percent,
-        "pork": pork_percent,
-        "beef": beef_percent,
-        "egg": egg_percent,
-        "fish": fish_percent,
-        "whey": whey_percent,
-    }
-
-    week = generate_week_plan(
-        foods,
-        calorie_target,
-        protein_target,
-        protein_split
+    percent_total = (
+        chicken_percent + pork_percent + beef_percent +
+        egg_percent + fish_percent + whey_percent
     )
 
-    return templates.TemplateResponse(
-        "menu.html",
-        {
-            "request": request,
-            "week": week
-        }
+    if percent_total != 100:
+        return HTMLResponse("Percent total must equal 100", status_code=400)
+
+    # ตัวอย่าง logic
+    weekly_protein = protein_target * 7
+
+    plan = MealPlan(
+        user_id=user_obj.id,
+        calorie_target=calorie_target,
+        protein_target=protein_target,
+        total_cost=0
     )
 
+    db.add(plan)
+    db.commit()
+
+    return RedirectResponse("/profile", status_code=303)
