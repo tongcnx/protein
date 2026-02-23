@@ -395,12 +395,14 @@ def update_actual(
 def profile(
     request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    user=Depends(get_current_user)   # <-- รับเป็น email
 ):
 
-    # ===== Weekly Records (Cost Analytics)
+    user_obj = db.query(User).filter(User.email == user).first()
+
+    # ===== Weekly Records =====
     records = db.query(WeeklyRecord).filter(
-        WeeklyRecord.user_id == current_user.id
+        WeeklyRecord.user_id == user_obj.id
     ).all()
 
     total_weeks = len(records)
@@ -410,19 +412,20 @@ def profile(
     avg_estimated = total_estimated / total_weeks if total_weeks else 0
     avg_actual = total_actual / total_weeks if total_weeks else 0
 
-    # ===== Meal Plans (Generated Menus)
+    # ===== Meal Plans =====
     plans = db.query(MealPlan).filter(
-        MealPlan.user_id == current_user.id
+        MealPlan.user_id == user_obj.id
     ).order_by(MealPlan.created_at.desc()).all()
 
     return templates.TemplateResponse("profile.html", {
         "request": request,
-        "user": current_user,
+        "user": user_obj,
         "total_weeks": total_weeks,
         "avg_estimated": round(avg_estimated, 2),
         "avg_actual": round(avg_actual, 2),
         "plans": plans
     })
+
 
 
 @app.get("/menu-generator", response_class=HTMLResponse)
