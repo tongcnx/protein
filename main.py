@@ -655,6 +655,8 @@ def generate_from_portfolio(
         "whey": whey_percent,
     }
 
+    foods_dict = load_foods()
+
     foods = [
         {
             "name": name,
@@ -666,12 +668,14 @@ def generate_from_portfolio(
     ]
 
     week_plan = generate_week_plan(
-        calorie_target=calorie_target,
-        protein_target=protein_target,
-        protein_split=protein_split,
-        style=meal_style
+        foods,
+        calorie_target,
+        protein_target,
+        protein_split,
+        None                    # budget
     )
 
+    # ใส่ style ที่ suggest_meals แทน
     for day in week_plan:
         day["suggested_meals"] = suggest_meals(day, meal_style)
 
