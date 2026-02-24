@@ -16,6 +16,8 @@ from collections import defaultdict
 
 import random
 
+ROUND_UNIT = 100  # ปัดเป็น 100g
+
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
@@ -23,6 +25,9 @@ app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 templates = Jinja2Templates(directory="templates")
+
+def round_100g(x):
+    return int(round(x / ROUND_UNIT)) * ROUND_UNIT
 
 
 def get_db():
@@ -660,23 +665,24 @@ def generate_from_portfolio(
         for name, data in foods_dict.items()
     ]
 
-    week = generate_week_plan(
-        foods,
-        calorie_target,
-        protein_target,
-        protein_split,
-        None
+    week_plan = generate_week_plan(
+        calorie_target=calorie_target,
+        protein_target=protein_target,
+        protein_split=protein_split,
+        style=meal_style
     )
 
-    # ✅ Smart suggestion based on style
-    for day in week:
+    for day in week_plan:
         day["suggested_meals"] = suggest_meals(day, meal_style)
 
     return templates.TemplateResponse(
         "weekly_plan.html",
         {
             "request": request,
-            "week": week,
+            "week": week_plan,
             "meal_style": meal_style
         }
     )
+
+
+
