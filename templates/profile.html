@@ -1,111 +1,126 @@
-<div class="bg-[#F9FAF7] py-10 mb-12">
-    <div class="max-w-5xl mx-auto px-4 text-center">
+<div class="bg-[#F9FAF7] py-6 mb-8">
+  <div class="max-w-6xl mx-auto px-4 flex items-center justify-between">
 
-        <img src="/static/logo.png" class="h-12 mx-auto mb-3" alt="Protein Planner">
-
-        <p class="text-xs text-gray-400 tracking-wide">
-            Build Your Weekly Protein Plan
-        </p>
-
+    <div class="flex items-center gap-3">
+      <img src="/static/logo.png" class="h-8">
+      <span class="text-sm text-gray-400">
+        Dashboard
+      </span>
     </div>
+
+    <span class="text-xs text-gray-400">
+      {{ user.email }}
+    </span>
+
+  </div>
 </div>
 
-<div class="max-w-5xl mx-auto px-4">
+<div class="max-w-6xl mx-auto px-4 mb-10">
 
-    <div class="bg-white rounded-2xl shadow-sm p-6 mb-10">
-        <h1 class="text-xl font-semibold text-gray-800 mb-1">
-            Profile Analytics
-        </h1>
-        <p class="text-sm text-gray-500 mb-4">
-            Your personal nutrition & spending overview
-        </p>
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
 
-        <p class="text-sm text-gray-600">
-            <span class="font-medium">Email:</span> {{ user.email }}
-        </p>
+    <div class="bg-white rounded-xl p-5 shadow-sm">
+      <p class="text-xs text-gray-400">TOTAL WEEKS</p>
+      <p class="text-3xl font-semibold text-gray-800">
+        {{ total_weeks }}
+      </p>
     </div>
 
-<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12">
-
-    <div class="bg-white rounded-2xl shadow-sm p-5">
-        <p class="text-xs text-gray-400 uppercase tracking-wide">
-            Total Weeks
-        </p>
-        <p class="text-2xl font-semibold text-gray-800">
-            {{ total_weeks }}
-        </p>
+    <div class="bg-white rounded-xl p-5 shadow-sm">
+      <p class="text-xs text-gray-400">AVG BUDGET</p>
+      <p class="text-3xl font-semibold text-emerald-600">
+        {{ "%.0f"|format(avg_estimated) }}
+      </p>
     </div>
 
-    <div class="bg-white rounded-2xl shadow-sm p-5">
-        <p class="text-xs text-gray-400 uppercase tracking-wide">
-            Avg Estimated Cost
-        </p>
-        <p class="text-2xl font-semibold text-emerald-600">
-            {{ "%.2f"|format(avg_estimated) }} ฿
-        </p>
+    <div class="bg-white rounded-xl p-5 shadow-sm">
+      <p class="text-xs text-gray-400">AVG SPENT</p>
+      <p class="text-3xl font-semibold text-gray-800">
+        {{ "%.0f"|format(avg_actual) }}
+      </p>
     </div>
 
-    <div class="bg-white rounded-2xl shadow-sm p-5">
-        <p class="text-xs text-gray-400 uppercase tracking-wide">
-            Avg Actual Cost
-        </p>
-        <p class="text-2xl font-semibold text-emerald-700">
-            {{ "%.2f"|format(avg_actual) }} ฿
-        </p>
+    <div class="bg-white rounded-xl p-5 shadow-sm">
+      <p class="text-xs text-gray-400">BUDGET STATUS</p>
+
+      {% if avg_actual <= avg_estimated %}
+        <p class="text-2xl font-semibold text-emerald-600">ON TRACK</p>
+      {% else %}
+        <p class="text-2xl font-semibold text-red-500">OVER</p>
+      {% endif %}
     </div>
+
+  </div>
 
 </div>
 
-<h2 class="text-lg font-semibold mb-6 text-gray-800">
-    Your Meal Plans
-</h2>
+<div class="max-w-6xl mx-auto px-4 mb-12">
 
-<div class="space-y-6">
+  <h2 class="text-sm text-gray-400 mb-3">
+    THIS WEEK
+  </h2>
 
-{% for plan in plans %}
-<div class="bg-white rounded-2xl shadow-sm p-6">
+  <div class="bg-white rounded-xl p-6 shadow-sm">
 
     <div class="flex justify-between items-center mb-4">
-        <p class="text-xs text-gray-400">
-            {{ plan.created_at.strftime("%Y-%m-%d") }}
-        </p>
-        <span class="text-sm font-medium text-emerald-600">
-            {{ "%.2f"|format(plan.total_cost) }} ฿
-        </span>
+      <span class="text-sm text-gray-500">
+        {{ plans[0].created_at.strftime("%Y-%m-%d") }}
+      </span>
+      <span class="text-lg font-semibold text-emerald-600">
+        {{ "%.0f"|format(plans[0].total_cost) }} ฿
+      </span>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-700">
-        <div>
-            <p class="font-medium text-gray-900 mb-1">Target</p>
-            <p>{{ plan.calorie_target }} kcal</p>
-            <p>{{ plan.protein_target }} g protein</p>
-        </div>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
 
-        <div>
-            <p class="font-medium text-gray-900 mb-1">Actual</p>
-            <p>{{ plan.total_calories }} kcal</p>
-            <p>{{ plan.total_protein }} g protein</p>
-        </div>
+      <div>
+        <p class="text-xs text-gray-400">PROTEIN</p>
+        <p class="text-xl font-semibold">{{ plans[0].total_protein }} g</p>
+      </div>
+
+      <div>
+        <p class="text-xs text-gray-400">TARGET</p>
+        <p class="text-xl font-semibold">{{ plans[0].protein_target }} g</p>
+      </div>
+
+      <div>
+        <p class="text-xs text-gray-400">CAL</p>
+        <p class="text-xl font-semibold">{{ plans[0].total_calories }}</p>
+      </div>
+
+      <div>
+        <p class="text-xs text-gray-400">MEALS</p>
+        <p class="text-xl font-semibold">{{ plans[0].meals_per_day }}</p>
+      </div>
+
     </div>
 
-    {% if plan.protein_split %}
-    <div class="mt-5">
-        <p class="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">
-            Protein Split
-        </p>
-
-        <div class="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
-            {% for key, value in plan.protein_split.items() %}
-            <div class="bg-[#F9FAF7] rounded-lg px-3 py-2 flex justify-between">
-                <span class="text-gray-600">{{ key }}</span>
-                <span class="font-medium text-gray-800">{{ value }}%</span>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-    {% endif %}
+  </div>
 
 </div>
-{% endfor %}
+
+<div class="max-w-6xl mx-auto px-4 mb-16">
+
+  <h2 class="text-sm text-gray-400 mb-3">
+    HISTORY
+  </h2>
+
+  <div class="bg-white rounded-xl shadow-sm divide-y">
+
+    {% for plan in plans[1:] %}
+    <div class="flex justify-between items-center px-6 py-4 text-sm">
+
+      <span class="text-gray-600">
+        {{ plan.created_at.strftime("%Y-%m-%d") }}
+      </span>
+
+      <span class="font-medium">
+        {{ "%.0f"|format(plan.total_cost) }} ฿
+      </span>
+
+    </div>
+    {% endfor %}
+
+  </div>
 
 </div>
