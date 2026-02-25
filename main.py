@@ -437,6 +437,10 @@ def profile(
         avg_cost=avg_estimated_cost
     )
 
+        trainer_title = trainer_summary["trainer_title"]
+        trainer_subtitle = trainer_summary["trainer_subtitle"]
+        cost_insight = trainer_summary["cost_insight"]
+
     # ===== Premium Analytics =====
 
     # 🔥 Weekly Consistency Score
