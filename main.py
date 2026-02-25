@@ -423,7 +423,7 @@ def profile(
         MealPlan.user_id == user_obj.id
     ).order_by(MealPlan.created_at.desc()).all()
 
-    trainer_title, trainer_subtitle = build_trainer_summary(
+    # trainer_title, trainer_subtitle = build_trainer_summary(
         planned_protein=weekly_protein_planned,
         target_protein=weekly_protein_target,
         total_cost=total_cost,
