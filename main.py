@@ -12,6 +12,7 @@ from dependencies import get_current_user
 from core.food_engine import generate_optimized_menu, load_foods
 from core.god_engine import generate_week_plan
 from collections import defaultdict
+from trainer import build_trainer_summary
 
 
 import random
@@ -422,8 +423,18 @@ def profile(
         MealPlan.user_id == user_obj.id
     ).order_by(MealPlan.created_at.desc()).all()
 
+    trainer_title, trainer_subtitle = build_trainer_summary(
+        planned_protein=weekly_protein_planned,
+        target_protein=weekly_protein_target,
+        total_cost=total_cost,
+        avg_cost=avg_estimated_cost
+    )
+
     return templates.TemplateResponse("profile.html", {
         "request": request,
+        "request": request,
+        "trainer_title": trainer_title,
+        "trainer_subtitle": trainer_subtitle,
         "user": user_obj,
         "total_weeks": total_weeks,
         "avg_estimated": round(avg_estimated, 2),
