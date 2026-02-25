@@ -2,55 +2,58 @@
 
 import random
 
+PORTION_SIZE = 100  # 1 portion = 100g
+
+
 MENU_DB = {
     "chicken": {
         "thai": [
-            "ไก่ย่าง 200g",
-            "ต้มยำไก่ 200g",
-            "ไก่ผัดพริก 200g",
-            "ข้าวมันไก่ 200g",
-            "ลาบไก่ 200g",
+            "ไก่ย่าง",
+            "ต้มยำไก่",
+            "ไก่ผัดพริก",
+            "ข้าวมันไก่",
+            "ลาบไก่",
         ]
     },
     "pork": {
         "thai": [
-            "หมูย่าง 200g",
-            "หมูผัดกระเทียม 200g",
-            "ต้มแซ่บหมู 200g",
-            "ลาบหมู 200g",
-            "หมูทอด 200g",
+            "หมูย่าง",
+            "หมูผัดกระเทียม",
+            "ต้มแซ่บหมู",
+            "ลาบหมู",
+            "หมูทอด",
         ]
     },
     "beef": {
         "thai": [
-            "เนื้อย่าง 200g",
-            "ผัดกะเพราเนื้อ 200g",
-            "ต้มเนื้อ 200g",
-            "เนื้อผัดพริกไทยดำ 200g",
-            "เนื้อตุ๋น 200g",
+            "เนื้อย่าง",
+            "ผัดกะเพราเนื้อ",
+            "ต้มเนื้อ",
+            "เนื้อผัดพริกไทยดำ",
+            "เนื้อตุ๋น",
         ]
     },
     "fish": {
         "thai": [
-            "ปลานึ่งมะนาว 200g",
-            "ปลาทอด 200g",
-            "ต้มยำปลา 200g",
-            "ปลาย่าง 200g",
-            "ปลาผัดฉ่า 200g",
+            "ปลานึ่งมะนาว",
+            "ปลาทอด",
+            "ต้มยำปลา",
+            "ปลาย่าง",
+            "ปลาผัดฉ่า",
         ]
     },
     "egg": {
         "thai": [
-            "ไข่ต้ม 2 ฟอง",
-            "ไข่เจียว 2 ฟอง",
+            "ไข่ต้ม",
+            "ไข่เจียว",
             "ไข่ลูกเขย",
             "ไข่พะโล้",
-            "ไข่ดาว 2 ฟอง",
+            "ไข่ดาว",
         ]
     },
     "whey": {
         "thai": [
-            "เวย์เชค 1 scoop",
+            "เวย์เชค",
             "เวย์ + กล้วย",
             "เวย์ + ข้าวโอ๊ต",
         ]
@@ -59,27 +62,45 @@ MENU_DB = {
 
 
 def suggest_meals(day_plan, style="thai"):
-
-    sorted_items = sorted(
-        day_plan["menu"],
-        key=lambda x: x["grams"],
-        reverse=True,
-    )
+    """
+    Portion-based meal suggestion
+    1 portion = 100g
+    """
 
     suggestions = []
 
-    # ใช้ top 2 protein
-    for item in sorted_items[:2]:
+    for item in day_plan["menu"]:
 
-        base = item["name"]
+        grams = item["grams"]
+        name = item["name"]
 
-        if base in MENU_DB and style in MENU_DB[base]:
-            meals = MENU_DB[base][style]
-            suggestions.extend(
-                random.sample(meals, min(2, len(meals)))
-            )
+        if grams <= 0:
+            continue
 
-    # ลบซ้ำ
-    suggestions = list(set(suggestions))
+        portions = int(grams // PORTION_SIZE)
 
-    return suggestions[:4]
+        if portions <= 0:
+            continue
+
+        if name not in MENU_DB:
+            continue
+
+        if style not in MENU_DB[name]:
+            continue
+
+        meal_pool = MENU_DB[name][style]
+
+        # เลือกตามจำนวน portion
+        selected = random.sample(
+            meal_pool,
+            min(portions, len(meal_pool))
+        )
+
+        for meal in selected:
+            suggestions.append({
+                "food": name,
+                "meal": meal,
+                "portion_grams": PORTION_SIZE
+            })
+
+    return suggestions
