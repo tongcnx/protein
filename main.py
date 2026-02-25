@@ -430,7 +430,7 @@ def profile(
     total_cost = total_estimated
     avg_estimated_cost = avg_estimated
 
-    trainer_title, trainer_subtitle = build_trainer_summary(
+    trainer_summary = build_trainer_summary(
         planned_protein=weekly_protein_planned,
         target_protein=weekly_protein_target,
         total_cost=total_cost,
