@@ -430,17 +430,55 @@ def profile(
         avg_cost=avg_estimated_cost
     )
 
+    # ===== Premium Analytics =====
+
+    # 🔥 Weekly Consistency Score
+    weeks_with_actual = [r for r in records if r.actual_cost]
+    consistency_score = 0
+
+    if total_weeks > 0:
+        consistency_score = round((len(weeks_with_actual) / total_weeks) * 100)
+
+    # 🏆 Achievement Badges
+    badges = []
+
+    if total_weeks >= 4:
+        badges.append("Starter")
+
+    if total_weeks >= 12:
+        badges.append("Committed")
+
+    if total_weeks >= 24:
+        badges.append("Elite")
+
+    if avg_actual and avg_actual <= avg_estimated:
+        badges.append("Budget Master")
+    
+    if consistency_score >= 80:
+        badges.append("Consistency King")
+
+    # 🧠 AI Insight
+    if consistency_score >= 80:
+        insight = "Your consistency is excellent. You're building strong discipline."
+    elif consistency_score >= 50:
+        insight = "You're progressing well. Improve weekly tracking to unlock higher performance."
+    else:
+        insight = "Track your actual costs weekly to gain better nutrition control."
+
+
+
     return templates.TemplateResponse("profile.html", {
         "request": request,
-        "request": request,
-        "trainer_title": trainer_title,
-        "trainer_subtitle": trainer_subtitle,
         "user": user_obj,
         "total_weeks": total_weeks,
         "avg_estimated": round(avg_estimated, 2),
         "avg_actual": round(avg_actual, 2),
-        "plans": plans
+        "plans": plans,
+        "consistency_score": consistency_score,
+        "badges": badges,
+        "insight": insight
     })
+
 
 
 
