@@ -1,18 +1,11 @@
-from fastapi import Request, HTTPException
-from jose import jwt, JWTError
-from auth import SECRET_KEY, ALGORITHM
+# dependencies.py
 
-def get_current_user(request: Request):
-    token = request.cookies.get("token")
+from database import SessionLocal
+from sqlalchemy.orm import Session
 
-    if not token:
-        raise HTTPException(status_code=401)
-
+def get_db() -> Session:
+    db = SessionLocal()
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email = payload.get("sub")
-        if not email:
-            raise HTTPException(status_code=401)
-        return email
-    except JWTError:
-        raise HTTPException(status_code=401)
+        yield db
+    finally:
+        db.close()
