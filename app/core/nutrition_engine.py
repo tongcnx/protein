@@ -4,7 +4,7 @@ class FoodEngine:
 
     def __init__(self):
 
-        with open("data/food_database.json") as f:
+        with open("app/data/food_database.json") as f:
             self.foods = json.load(f)
 
 

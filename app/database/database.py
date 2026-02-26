@@ -8,7 +8,7 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 
 # ถ้าไม่มี env → ใช้ SQLite local
 if not DATABASE_URL:
-    DATABASE_URL = "sqlite:///./nutrition.db"
+    SQLALCHEMY_DATABASE_URL = "sqlite:///./app/nutrition.db"
 
 # Render ให้ postgres:// แต่ SQLAlchemy ต้อง postgresql://
 if DATABASE_URL.startswith("postgres://"):
