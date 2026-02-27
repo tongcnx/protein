@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from services.budget_optimizer import BudgetOptimizer
+from app.services.budget_optimizer import BudgetOptimizer
 
 router=APIRouter()
 
