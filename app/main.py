@@ -12,7 +12,12 @@ from app.routers import (
     trainer
 )
 
+from app.database import Base, engine
+
+
 app = FastAPI()
+
+Base.metadata.create_all(bind=engine)
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
