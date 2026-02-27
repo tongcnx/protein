@@ -1,6 +1,6 @@
 # dependencies.py
 
-from database import SessionLocal
+from app.database import SessionLocal
 from sqlalchemy.orm import Session
 
 def get_db() -> Session:
