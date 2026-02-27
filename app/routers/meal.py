@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from services.meal_generator import MealGenerator
+from app.services.meal_generator import MealGenerator
 
 router=APIRouter()
 
