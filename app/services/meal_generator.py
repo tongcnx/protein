@@ -1,4 +1,4 @@
-from core.nutrition_engine import FoodEngine
+from app.core.nutrition_engine import FoodEngine
 import random
 
 engine = FoodEngine()
