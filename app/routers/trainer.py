@@ -1,4 +1,17 @@
 # -*- coding: utf-8 -*-
+from fastapi import APIRouter
+
+router = APIRouter(
+    prefix="/trainer",
+    tags=["Trainer"]
+)
+
+@router.get("/")
+def get_trainer():
+    return {
+        "message": "Trainer API working"
+    }
+
 
 def build_trainer_summary(
     planned_protein,
