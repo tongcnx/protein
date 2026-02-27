@@ -15,9 +15,9 @@ from app.routers import (
 from app.database.database import Base, engine
 
 
+
 app = FastAPI()
 
-Base.metadata.create_all(bind=engine)
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
@@ -32,6 +32,7 @@ app.include_router(budget.router)
 app.include_router(report.router)
 app.include_router(trainer.router)
 
+Base.metadata.create_all(bind=engine)
 
 @app.get("/")
 def root():
