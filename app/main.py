@@ -12,7 +12,7 @@ from app.routers import (
     trainer
 )
 
-from app.database import Base, engine
+from app.database.database import Base, engine
 
 
 app = FastAPI()
