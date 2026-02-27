@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from services.shopping_list import ShoppingList
+from app.services.shopping_list import ShoppingList
 
 router=APIRouter()
 
