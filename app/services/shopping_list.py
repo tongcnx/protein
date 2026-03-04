@@ -1,22 +1,12 @@
-class ShoppingList:
+def generate_shopping(portfolio):
 
+    shopping=[]
 
-    def generate(self,week_plan):
+    for item in portfolio:
 
-        result={}
+        shopping.append({
+            "source_id":item["source_id"],
+            "grams":item["grams"]
+        })
 
-        for day in week_plan.values():
-
-            for item in day:
-
-                name=item["food"]
-
-                gram=item["gram"]
-
-                if name not in result:
-
-                    result[name]=0
-
-                result[name]+=gram
-
-        return result
+    return shopping
