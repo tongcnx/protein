@@ -3,6 +3,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from app.database.database import Base, engine
 from app.models.user import User
+from sqlalchemy import text
 from app.routers import (
     auth,
     profile,
