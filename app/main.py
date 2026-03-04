@@ -20,8 +20,18 @@ app = FastAPI()
 
 @app.on_event("startup")
 def startup():
-    Base.metadata.drop_all(bind=engine)   # ลบทิ้งก่อน
-    Base.metadata.create_all(bind=engine) # สร้างใหม่
+
+    # ลบทุก table แบบ CASCADE
+    with engine.connect() as conn:
+        conn.execute(text("""
+        DROP SCHEMA public CASCADE;
+        CREATE SCHEMA public;
+        """))
+        conn.commit()
+
+    # สร้างใหม่ทั้งหมด
+    Base.metadata.create_all(bind=engine)
+
 
 app.include_router(auth_router)
 
