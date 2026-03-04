@@ -13,11 +13,17 @@ from app.routers import (
     report,
     trainer
 )
-
+from app.routers.auth import router as auth_router
 
 
 app = FastAPI()
 
+@app.on_event("startup")
+def startup():
+    Base.metadata.drop_all(bind=engine)   # ลบทิ้งก่อน
+    Base.metadata.create_all(bind=engine) # สร้างใหม่
+
+app.include_router(auth_router)
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
