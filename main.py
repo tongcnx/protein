@@ -1,41 +1,260 @@
-from fastapi import FastAPI, Request, Form, Depends, Cookie
+from fastapi import FastAPI, Request, Form, Depends, HTTPException, Cookie
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
-from collections import defaultdict
-from datetime import datetime
-import logging
-
-from database import engine
-from models import User, WeeklyRecord, MealPlan, MealItem, Base
+from database import SessionLocal, engine, get_db
+from models import User, WeeklyRecord, MealPlan, MealItem
 from auth import hash_password, verify_password, create_access_token
-from dependencies import get_current_user, get_db
+from database import Base
+from jose import jwt
+from fastapi.staticfiles import StaticFiles
+from dependencies import get_current_user
 from core.food_engine import generate_optimized_menu, load_foods
 from core.god_engine import generate_week_plan
-from core.meal_suggester import suggest_meals
+from collections import defaultdict
 from trainer import build_trainer_summary
 
-# ================= Logging =================
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("nutrition-app")
+
+import random
+
+ROUND_UNIT = 100  # ปัดเป็น 100g
 
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
 templates = Jinja2Templates(directory="templates")
 
-# ================= Helper =================
+def round_100g(x):
+    return int(round(x / ROUND_UNIT)) * ROUND_UNIT
+
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 def generate_grocery_summary(mealplan):
+
     summary = defaultdict(lambda: {"amount": 0, "unit": ""})
+
     for item in mealplan.items:
         summary[item.food_name]["amount"] += item.amount
         summary[item.food_name]["unit"] = item.unit
+
     return summary
 
-# ================= Auth =================
+@app.get("/dashboard", response_class=HTMLResponse)
+def dashboard(
+    request: Request,
+    user=Depends(get_current_user)
+):
+    return templates.TemplateResponse("index.html", {
+        "request": request,
+        "weight": "",
+        "height": "",
+        "age": "",
+        "gender": "male",
+        "activity": "1.2",
+        "goal": "maintain"
+    })
+
+
+@app.post("/calculate", response_class=HTMLResponse)
+def calculate(
+    request: Request,
+    user=Depends(get_current_user),
+    weight: float = Form(...),
+    height: float = Form(...),
+    age: int = Form(...),
+    gender: str = Form(...),
+    activity: float = Form(...),
+    goal: str = Form(...)
+):
+
+    # ===== BMR =====
+    if gender == "male":
+        bmr = 10*weight + 6.25*height - 5*age + 5
+    else:
+        bmr = 10*weight + 6.25*height - 5*age - 161
+
+    tdee = bmr * activity
+
+    if goal == "gain":
+        tdee += 300
+    elif goal == "cut":
+        tdee -= 300
+
+    daily_protein = weight * 2
+    weekly_protein = daily_protein * 7
+
+    return templates.TemplateResponse("index.html", {
+        "request": request,
+        "weight": weight,
+        "height": height,
+        "age": age,
+        "gender": gender,
+        "activity": str(activity),
+        "goal": goal,
+        "bmr": round(bmr, 1),
+        "tdee": round(tdee, 1),
+        "daily_protein": round(daily_protein, 1),
+        "weekly_protein": round(weekly_protein, 1)
+    })
+
+
+@app.post("/portfolio", response_class=HTMLResponse)
+def portfolio(
+    request: Request,
+    user=Depends(get_current_user),
+    weekly_protein: float = Form(...),
+    meals_per_day: int = Form(...),
+    weight: float = Form(...),
+    height: float = Form(...),
+    age: int = Form(...),
+    gender: str = Form(...),
+    activity: str = Form(...),
+    goal: str = Form(...),
+    chicken_percent: float = Form(...),
+    pork_percent: float = Form(...),
+    beef_percent: float = Form(...),
+    egg_percent: float = Form(...),
+    fish_percent: float = Form(...),
+    whey_percent: float = Form(...)
+):
+
+    activity_value = float(activity)
+
+
+    # ===== BMR =====
+    if gender == "male":
+        bmr = 10*weight + 6.25*height - 5*age + 5
+    else:
+        bmr = 10*weight + 6.25*height - 5*age - 161
+
+    tdee = bmr * activity_value
+
+    if goal == "gain":
+        tdee += 300
+    elif goal == "cut":
+        tdee -= 300
+
+    daily_protein = weekly_protein / 7
+    protein_per_meal = daily_protein / meals_per_day
+
+    total_percent = (
+        chicken_percent + pork_percent + beef_percent +
+        egg_percent + fish_percent + whey_percent
+    )
+
+    if total_percent != 100:
+        return templates.TemplateResponse("index.html", {
+            "request": request,
+            "results": results,
+            "protein_per_meal": protein_per_meal,
+            "total_cost": total_cost,
+            "weekly_protein": weekly_protein,
+            "daily_protein": daily_protein,
+            "tdee": tdee,
+            "protein_split": {
+                "chicken": chicken_percent,
+                "pork": pork_percent,
+                "beef": beef_percent,
+                "egg": egg_percent,
+                "fish": fish_percent,
+                "whey": whey_percent,
+            }
+        })
+
+
+    protein_sources = {
+        "เนื้อไก่": (21, chicken_percent),
+        "เนื้อหมู": (22, pork_percent),
+        "เนื้อวัว": (26, beef_percent),
+        "เนื้อปลา": (22, fish_percent),
+        "ไข่ไก่": (8, egg_percent),
+        "เวย์": (80, whey_percent),
+    }
+
+    prices = {
+        "เนื้อไก่": 100,
+        "เนื้อหมู": 200,
+        "เนื้อวัว": 280,
+        "เนื้อปลา": 180,
+        "ไข่ไก่": 140,
+        "เวย์": 990,
+    }
+
+    results = {}
+    chart_data = {}
+    total_cost = 0
+
+    for food, (protein_per_100g, percent) in protein_sources.items():
+
+        protein_needed = weekly_protein * (percent / 100)
+        grams_needed = (protein_needed / protein_per_100g) * 100
+        kg_needed = grams_needed / 1000
+        cost = kg_needed * prices[food]
+
+        total_cost += cost
+        results[food] = f"{round(grams_needed,1)} g (~{round(cost,0)} บาท)"
+        chart_data[food] = round(grams_needed, 1)
+
+    # ===== SAVE WEEKLY RECORD =====
+    from datetime import datetime
+
+    db = SessionLocal()
+    user_obj = db.query(User).filter(User.email == user).first()
+
+    # สร้าง week label จากวันที่จริง
+    week_label = datetime.utcnow().strftime("%Y-%m-%d")
+
+    new_record = WeeklyRecord(
+        user_id=user_obj.id,
+        week_label=week_label,
+        weight=weight,
+        weekly_protein=weekly_protein,
+        total_cost=total_cost
+    )
+
+    db.add(new_record)
+    db.commit()
+    db.close()
+
+    # ===== RETURN TEMPLATE =====
+
+    return templates.TemplateResponse("index.html", {
+        "request": request,
+        "weight": weight,
+        "height": height,
+        "age": age,
+        "gender": gender,
+        "activity": activity,
+        "goal": goal,
+        "bmr": round(bmr, 1),
+        "tdee": round(tdee, 1),
+        "daily_protein": round(daily_protein, 1),
+        "weekly_protein": weekly_protein,
+        "protein_per_meal": round(protein_per_meal, 1),
+        "results": results,
+        "chart_data": chart_data,
+        "total_cost": round(total_cost, 0),
+        
+        # ✅ ต้องมีอันนี้
+            "protein_split": {
+                "chicken": chicken_percent,
+                "pork": pork_percent,
+                "beef": beef_percent,
+                "egg": egg_percent,
+                "fish": fish_percent,
+                "whey": whey_percent,
+            }
+        })
+
 
 @app.post("/register")
 def register(
@@ -46,14 +265,25 @@ def register(
     db: Session = Depends(get_db)
 ):
     if password != confirm_password:
-        return templates.TemplateResponse("register.html", {"request": request, "error": "Passwords do not match"})
+        return templates.TemplateResponse("register.html", {
+            "request": request,
+            "error": "Passwords do not match"
+        })
 
-    if db.query(User).filter(User.email == email).first():
-        return templates.TemplateResponse("register.html", {"request": request, "error": "Email already registered"})
+    user = db.query(User).filter(User.email == email).first()
+    if user:
+        return templates.TemplateResponse("register.html", {
+            "request": request,
+            "error": "Email already registered"
+        })
 
-    db.add(User(email=email, password=hash_password(password)))
+    new_user = User(email=email, password=hash_password(password))
+    db.add(new_user)
     db.commit()
-    return RedirectResponse("/login", status_code=303)
+
+    return RedirectResponse(url="/login", status_code=303)
+
+
 
 @app.post("/login")
 def login(
@@ -64,49 +294,71 @@ def login(
 ):
     user = db.query(User).filter(User.email == email).first()
     if not user or not verify_password(password, user.password):
-        return templates.TemplateResponse("login.html", {"request": request, "error": "Invalid email or password"})
+        return templates.TemplateResponse("login.html", {
+            "request": request,
+            "error": "Invalid email or password"
+        })
 
-    token = create_access_token({"sub": user.email})
-    response = RedirectResponse("/dashboard", status_code=303)
-    response.set_cookie("token", token, httponly=True, samesite="none", secure=True)
+    access_token = create_access_token({"sub": user.email})
+
+    response = templates.TemplateResponse("login_success.html", {
+        "request": request
+    })
+
+    response.set_cookie(
+        key="token",
+        value=access_token,
+        httponly=True,
+        samesite="none",
+        secure=True
+    )
+
     return response
+
+
 
 @app.get("/login", response_class=HTMLResponse)
-def login_page(request: Request, token: str | None = Cookie(None)):
+def login_page(
+    request: Request,
+    token: str | None = Cookie(default=None)
+):
     if token:
         return RedirectResponse("/dashboard", status_code=303)
+
     return templates.TemplateResponse("login.html", {"request": request})
 
-@app.get("/logout")
-def logout():
-    response = RedirectResponse("/login", status_code=303)
-    response.delete_cookie("token")
-    return response
 
-# ================= Dashboard =================
+@app.get("/register", response_class=HTMLResponse)
+def register_page(request: Request):
+    return templates.TemplateResponse("register.html", {"request": request})
+
 
 @app.get("/", response_class=HTMLResponse)
-def root(token: str | None = Cookie(None)):
+def root(request: Request, token: str | None = Cookie(default=None)):
+
     if not token:
         return RedirectResponse("/login", status_code=303)
+
     return RedirectResponse("/dashboard", status_code=303)
 
-@app.get("/dashboard", response_class=HTMLResponse)
-def dashboard(request: Request, user=Depends(get_current_user)):
-    return templates.TemplateResponse("index.html", {"request": request})
-
-# ================= Progress =================
-
 @app.get("/progress", response_class=HTMLResponse)
-def progress(request: Request, db: Session = Depends(get_db), user=Depends(get_current_user)):
+def progress(request: Request, user=Depends(get_current_user)):
+
+    db = SessionLocal()
     user_obj = db.query(User).filter(User.email == user).first()
+
     records = db.query(WeeklyRecord).filter(
         WeeklyRecord.user_id == user_obj.id
     ).order_by(WeeklyRecord.created_at).all()
 
+    db.close()
+
     labels = [r.created_at.strftime("%d %b") for r in records]
     estimated = [round(r.total_cost, 2) for r in records]
-    actual = [round(r.actual_cost, 2) if r.actual_cost else None for r in records]
+    actual = [
+        round(r.actual_cost, 2) if r.actual_cost else None
+        for r in records
+    ]
 
     return templates.TemplateResponse("progress.html", {
         "request": request,
@@ -116,12 +368,48 @@ def progress(request: Request, db: Session = Depends(get_db), user=Depends(get_c
         "actual": actual
     })
 
-# ================= Profile =================
+
+
+@app.get("/logout")
+def logout():
+    response = RedirectResponse("/login", status_code=303)
+    response.delete_cookie("token")
+    return response
+
+@app.post("/update-actual")
+def update_actual(
+    record_id: int = Form(...),
+    actual_cost: float = Form(...),
+    user=Depends(get_current_user)
+):
+
+    db = SessionLocal()
+
+    record = db.query(WeeklyRecord).filter(
+        WeeklyRecord.id == record_id
+    ).first()
+
+    record.actual_cost = actual_cost
+
+    db.commit()
+    db.close()
+
+    return RedirectResponse("/progress", status_code=303)
+
 
 @app.get("/profile", response_class=HTMLResponse)
-def profile(request: Request, db: Session = Depends(get_db), user=Depends(get_current_user)):
+def profile(
+    request: Request,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user)   # <-- รับเป็น email
+):
+
     user_obj = db.query(User).filter(User.email == user).first()
-    records = db.query(WeeklyRecord).filter(WeeklyRecord.user_id == user_obj.id).all()
+
+    # ===== Weekly Records =====
+    records = db.query(WeeklyRecord).filter(
+        WeeklyRecord.user_id == user_obj.id
+    ).all()
 
     total_weeks = len(records)
     total_estimated = sum(r.total_cost for r in records)
@@ -130,14 +418,65 @@ def profile(request: Request, db: Session = Depends(get_db), user=Depends(get_cu
     avg_estimated = total_estimated / total_weeks if total_weeks else 0
     avg_actual = total_actual / total_weeks if total_weeks else 0
 
-    consistency_score = round((len([r for r in records if r.actual_cost]) / total_weeks) * 100) if total_weeks else 0
+    # ===== Meal Plans =====
+    plans = db.query(MealPlan).filter(
+        MealPlan.user_id == user_obj.id
+    ).order_by(MealPlan.created_at.desc()).all()
+
+    # ===== Trainer Metrics =====
+    weekly_protein_planned = sum(r.weekly_protein for r in records)
+    weekly_protein_target = weekly_protein_planned  # หรือจะคำนวณ target แยกก็ได้
+
+    total_cost = total_estimated
+    avg_estimated_cost = avg_estimated
 
     trainer_summary = build_trainer_summary(
-        total_estimated,
-        total_estimated,
-        total_estimated,
-        avg_estimated
+        planned_protein,
+        target_protein,
+        total_cost,
+        avg_cost
     )
+
+    trainer_title = trainer_summary["trainer_title"]
+    trainer_subtitle = trainer_summary["trainer_subtitle"]
+    cost_insight = trainer_summary["cost_insight"]
+
+    # ===== Premium Analytics =====
+
+    # 🔥 Weekly Consistency Score
+    weeks_with_actual = [r for r in records if r.actual_cost]
+    consistency_score = 0
+
+    if total_weeks > 0:
+        consistency_score = round((len(weeks_with_actual) / total_weeks) * 100)
+
+    # 🏆 Achievement Badges
+    badges = []
+
+    if total_weeks >= 4:
+        badges.append("Starter")
+
+    if total_weeks >= 12:
+        badges.append("Committed")
+
+    if total_weeks >= 24:
+        badges.append("Elite")
+
+    if avg_actual and avg_actual <= avg_estimated:
+        badges.append("Budget Master")
+    
+    if consistency_score >= 80:
+        badges.append("Consistency King")
+
+    # 🧠 AI Insight
+    if consistency_score >= 80:
+        insight = "Your consistency is excellent. You're building strong discipline."
+    elif consistency_score >= 50:
+        insight = "You're progressing well. Improve weekly tracking to unlock higher performance."
+    else:
+        insight = "Track your actual costs weekly to gain better nutrition control."
+
+
 
     return templates.TemplateResponse("profile.html", {
         "request": request,
@@ -145,17 +484,24 @@ def profile(request: Request, db: Session = Depends(get_db), user=Depends(get_cu
         "total_weeks": total_weeks,
         "avg_estimated": round(avg_estimated, 2),
         "avg_actual": round(avg_actual, 2),
+        "plans": plans,
         "consistency_score": consistency_score,
-        "trainer_title": trainer_summary["trainer_title"],
-        "trainer_subtitle": trainer_summary["trainer_subtitle"],
-        "cost_insight": trainer_summary["cost_insight"]
+        "badges": badges,
+        "insight": insight
     })
 
-# ================= Menu Generator =================
+
+
 
 @app.get("/menu-generator", response_class=HTMLResponse)
-def menu_generator(request: Request, user=Depends(get_current_user)):
-    return templates.TemplateResponse("menu.html", {"request": request})
+def menu_generator(
+    request: Request,
+    current_user: User = Depends(get_current_user)
+):
+    return templates.TemplateResponse(
+        "menu.html",
+        {"request": request}
+    )
 
 @app.post("/generate-menu")
 def generate_menu(
@@ -164,14 +510,13 @@ def generate_menu(
     protein_target: float = Form(...),
     budget: float = Form(None),
     db: Session = Depends(get_db),
-    user=Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
-    user_obj = db.query(User).filter(User.email == user).first()
 
     result = generate_optimized_menu(calorie_target, protein_target, budget)
 
     mealplan = MealPlan(
-        user_id=user_obj.id,
+        user_id=current_user.id,   # ✅ ใช้ object ตรง ๆ
         calorie_target=calorie_target,
         protein_target=protein_target,
         total_calories=result["total_cal"],
@@ -184,7 +529,7 @@ def generate_menu(
     db.refresh(mealplan)
 
     for item in result["menu"]:
-        db.add(MealItem(
+        db_item = MealItem(
             mealplan_id=mealplan.id,
             food_name=item["name"],
             amount=item.get("amount", 1),
@@ -192,20 +537,51 @@ def generate_menu(
             calories=item["calories"],
             protein=item["protein"],
             cost=item["price"],
-        ))
+        )
+        db.add(db_item)
 
     db.commit()
 
-    return templates.TemplateResponse("menu.html", {"request": request, "result": result})
+    return templates.TemplateResponse(
+        "menu.html",
+        {
+            "request": request,
+            "result": result
+        }
+    )
 
-# ================= God Mode =================
+
+
+@app.get("/meal-history", response_class=HTMLResponse)
+def meal_history(request: Request, user=Depends(get_current_user)):
+
+    db = SessionLocal()
+    user_obj = db.query(User).filter(User.email == user).first()
+
+    plans = db.query(MealPlan).filter(
+        MealPlan.user_id == user_obj.id
+    ).order_by(MealPlan.created_at.desc()).all()
+
+    db.close()
+
+    return templates.TemplateResponse(
+        "meal_history.html",
+        {"request": request, "plans": plans}
+    )
+
 
 @app.post("/generate-god-mode")
 def generate_god_mode(
     request: Request,
     calorie_target: float = Form(...),
     protein_target: float = Form(...),
+    budget: float = Form(None),
 ):
+
+    from core.food_engine import load_foods
+    from core.god_engine import generate_week_plan
+    from core.meal_suggester import suggest_meals
+
     foods_dict = load_foods()
 
     foods = [
@@ -218,27 +594,159 @@ def generate_god_mode(
         for name, data in foods_dict.items()
     ]
 
-    week = generate_week_plan(foods, calorie_target, protein_target, None, None)
+    week = generate_week_plan(
+        foods,
+        calorie_target,
+        protein_target,
+        None,   # no protein split here
+        budget
+    )
 
+    # ✅ เพิ่ม Smart Suggestion
     for day in week:
         day["suggested_meals"] = suggest_meals(day)
 
-    return templates.TemplateResponse("menu.html", {"request": request, "week": week})
+    return templates.TemplateResponse(
+        "menu.html",
+        {
+            "request": request,
+            "week": week
+        }
+    )
 
-# ================= Grocery =================
+
 
 @app.get("/grocery/{plan_id}")
-def grocery_page(plan_id: int, request: Request, db: Session = Depends(get_db)):
+def grocery_page(plan_id: int, request: Request):
+
+    db = SessionLocal()
     mealplan = db.query(MealPlan).filter(MealPlan.id == plan_id).first()
+
     summary = generate_grocery_summary(mealplan)
-    return templates.TemplateResponse("grocery.html", {
-        "request": request,
-        "summary": summary,
-        "mealplan": mealplan
-    })
 
-# ================= Health =================
+    db.close()
 
-@app.get("/health")
-def health():
-    return {"status": "ok"}
+    return templates.TemplateResponse(
+        "grocery.html",
+        {
+            "request": request,
+            "summary": summary,
+            "mealplan": mealplan
+        }
+    )
+
+
+@app.post("/save-week-plan")
+def save_week_plan(
+    calorie_target: float,
+    protein_target: float,
+    total_calories: float,
+    total_protein: float,
+    total_cost: float,
+    protein_split: dict,
+    menu: list,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+
+    mealplan = MealPlan(
+        user_id=current_user.id,
+        calorie_target=calorie_target,
+        protein_target=protein_target,
+        total_calories=round(total_calories, 2),
+        total_protein=round(total_protein, 2),
+        total_cost=round(total_cost, 2),
+        protein_split=protein_split
+    )
+
+    db.add(mealplan)
+    db.commit()
+    db.refresh(mealplan)
+
+    # save items
+    for item in menu:
+        meal_item = MealItem(
+            mealplan_id=mealplan.id,
+            food_name=item["name"],
+            amount=item.get("amount", 1),
+            unit=item.get("unit", "g"),
+            calories=round(item["calories"], 2),
+            protein=round(item["protein"], 2),
+            cost=round(item["cost"], 2)
+        )
+        db.add(meal_item)
+
+    db.commit()
+
+    return {"status": "saved"}
+
+
+@app.post("/generate-from-portfolio")
+def generate_from_portfolio(
+    request: Request,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+
+    calorie_target: float = Form(...),
+    protein_target: float = Form(...),
+
+    chicken_percent: float = Form(0),
+    pork_percent: float = Form(0),
+    beef_percent: float = Form(0),
+    egg_percent: float = Form(0),
+    fish_percent: float = Form(0),
+    whey_percent: float = Form(0),
+
+    meal_style: str = Form("thai"),
+):
+
+    from core.food_engine import load_foods
+    from core.god_engine import generate_week_plan
+    from core.meal_suggester import suggest_meals
+
+    foods_dict = load_foods()
+
+    protein_split = {
+        "chicken": chicken_percent,
+        "pork": pork_percent,
+        "beef": beef_percent,
+        "egg": egg_percent,
+        "fish": fish_percent,
+        "whey": whey_percent,
+    }
+
+    foods_dict = load_foods()
+
+    foods = [
+        {
+            "name": name,
+            "protein": data["protein"],
+            "calories": data["calories"],
+            "price": data["price"]
+        }
+        for name, data in foods_dict.items()
+    ]
+
+    week_plan = generate_week_plan(
+        foods,
+        calorie_target,
+        protein_target,
+        protein_split,
+        None                    # budget
+    )
+
+    # ใส่ style ที่ suggest_meals แทน
+    for day in week_plan:
+        day["suggested_meals"] = suggest_meals(day, meal_style)
+
+    return templates.TemplateResponse(
+        "weekly_plan.html",
+        {
+            "request": request,
+            "week": week_plan,
+            "meal_style": meal_style
+        }
+    )
+
+
+
