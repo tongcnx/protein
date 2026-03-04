@@ -4,6 +4,7 @@ from fastapi.templating import Jinja2Templates
 from app.database.database import Base, engine
 from app.models.user import User
 from sqlalchemy import text
+from app.routers import protein
 from app.routers import (
     auth,
     profile,
@@ -35,6 +36,7 @@ def startup():
 
 
 app.include_router(auth_router)
+app.include_router(protein.router)
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
