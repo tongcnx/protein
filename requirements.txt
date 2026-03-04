@@ -6,4 +6,3 @@ sqlalchemy
 passlib[bcrypt]
 python-jose
 psycopg2-binary
-reportlab
