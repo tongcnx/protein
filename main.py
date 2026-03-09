@@ -424,8 +424,8 @@ def profile(
     ).order_by(MealPlan.created_at.desc()).all()
 
     # ===== Trainer Metrics =====
-    planned_protein = sum(r.planned_protein for r in records if r.planned_protein)
-    target_protein = sum(r.target_protein for r in records if r.target_protein)
+    planned_protein = sum(r.protein for r in records if r.protein)
+    target_protein = planned_protein
     total_cost = sum(r.total_cost for r in records if r.total_cost)
     avg_cost = total_cost / len(records) if records else 0
 

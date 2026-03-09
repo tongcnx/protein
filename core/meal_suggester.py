@@ -2,14 +2,7 @@
 
 import random
 
-meals = meal_database[food]
-random.shuffle(meals)
-
-return meals[:3]
-
-
 PORTION_SIZE = 100  # 1 portion = 100g
-
 
 MENU_DB = {
     "chicken": {
@@ -69,21 +62,20 @@ MENU_DB = {
 
 def suggest_meals(day_plan, style="thai"):
     """
-    Portion-based meal suggestion
-    1 portion = 100g
+    Convert portion plan → meal suggestions
     """
 
     suggestions = []
 
     for item in day_plan["menu"]:
 
-        grams = item["grams"]
         name = item["name"]
+        grams = item["grams"]
 
         if grams <= 0:
             continue
 
-        portions = int(grams // PORTION_SIZE)
+        portions = int(grams / PORTION_SIZE)
 
         if portions <= 0:
             continue
@@ -91,12 +83,11 @@ def suggest_meals(day_plan, style="thai"):
         if name not in MENU_DB:
             continue
 
-        if style not in MENU_DB[name]:
+        meal_pool = MENU_DB[name].get(style, [])
+
+        if not meal_pool:
             continue
 
-        meal_pool = MENU_DB[name][style]
-
-        # เลือกตามจำนวน portion
         selected = random.sample(
             meal_pool,
             min(portions, len(meal_pool))

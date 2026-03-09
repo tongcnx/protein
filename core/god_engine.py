@@ -9,6 +9,30 @@ MAX_PORTION = {
     "beef": 300
 }
 
+def normalize_food_name(name):
+
+    name = name.lower()
+
+    if "ไก่" in name:
+        return "chicken"
+
+    if "หมู" in name:
+        return "pork"
+
+    if "เนื้อ" in name:
+        return "beef"
+
+    if "ปลา" in name:
+        return "fish"
+
+    if "ไข่" in name:
+        return "egg"
+
+    if "เวย์" in name:
+        return "whey"
+
+    return name
+
 
 def round_100g(x):
     return int(round(x / ROUND_UNIT)) * ROUND_UNIT
@@ -30,7 +54,7 @@ def generate_day_plan(
 
     for food in food_data:
 
-        name = food["name"]
+        name = normalize_food_name(food["name"])
         percent = protein_split.get(name, 0) / 100
 
         if percent <= 0:
