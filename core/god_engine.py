@@ -9,8 +9,6 @@ MAX_PORTION = {
     "beef": 300
 }
 
-amount = min(amount, MAX_PORTION.get(food, amount))
-
 
 def round_100g(x):
     return int(round(x / ROUND_UNIT)) * ROUND_UNIT
@@ -41,10 +39,20 @@ def generate_day_plan(
         # 🎯 target protein per source
         protein_needed = protein_target * percent
 
+
         # 🎯 convert to grams
+        if food["protein"] <= 0:
+            continue
+
         raw_grams = (protein_needed / food["protein"]) * 100
 
         grams = round_100g(raw_grams)
+
+        # 🔒 portion cap
+        max_allowed = MAX_PORTION.get(name)
+        if max_allowed:
+            grams = min(grams, max_allowed)
+
 
         calories = (grams / 100) * food["calories"]
         protein = (grams / 100) * food["protein"]
