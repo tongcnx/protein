@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 import os
 
-SECRET_KEY = os.getenv("SECRET_KEY")
+SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-change-me")
 if not SECRET_KEY:
     raise RuntimeError("SECRET_KEY not set")
 

@@ -749,4 +749,7 @@ def generate_from_portfolio(
     )
 
 
+@app.get("/health")
+def health():
+    return {"status": "ok"}
 

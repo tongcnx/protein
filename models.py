@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, JSO
 from sqlalchemy.orm import relationship
 from database import Base
 from datetime import datetime
+from sqlalchemy.dialects.postgresql import JSONB
 
 
 class User(Base):
@@ -18,7 +19,7 @@ class WeeklyRecord(Base):
     __tablename__ = "weekly_records"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
+    user_id = Column(Integer, ForeignKey("users.id"), index=True)
     week_label = Column(String)
     weight = Column(Float)
     weekly_protein = Column(Float)
@@ -32,7 +33,7 @@ class MealPlan(Base):
     __tablename__ = "mealplans"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
+    user_id = Column(Integer, ForeignKey("users.id"), index=True)
     calorie_target = Column(Float)
     protein_target = Column(Float)
     total_calories = Column(Float)
@@ -41,8 +42,11 @@ class MealPlan(Base):
     protein_split = Column(JSON, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    items = relationship("MealItem", back_populates="mealplan")
-
+    items = relationship(
+        "MealItem",
+        back_populates="mealplan",
+        cascade="all, delete-orphan"
+    )
 
 class MealItem(Base):
     __tablename__ = "mealitems"
