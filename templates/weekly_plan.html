@@ -39,7 +39,7 @@
                 <h4 class="font-semibold">🍳 Suggested Meals</h4>
                 <ul class="list-disc pl-6">
                     {% for meal in day.suggested_meals %}
-                        <li>{{ meal }}</li>
+                        <li>{{ meal.meal }} ({{ meal.portion_grams }} g)</li>
                     {% endfor %}
                 </ul>
             </div>

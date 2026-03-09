@@ -424,11 +424,10 @@ def profile(
     ).order_by(MealPlan.created_at.desc()).all()
 
     # ===== Trainer Metrics =====
-    weekly_protein_planned = sum(r.weekly_protein for r in records)
-    weekly_protein_target = weekly_protein_planned  # หรือจะคำนวณ target แยกก็ได้
-
-    total_cost = total_estimated
-    avg_estimated_cost = avg_estimated
+    planned_protein = sum(r.planned_protein for r in records if r.planned_protein)
+    target_protein = sum(r.target_protein for r in records if r.target_protein)
+    total_cost = sum(r.total_cost for r in records if r.total_cost)
+    avg_cost = total_cost / len(records) if records else 0
 
     trainer_summary = build_trainer_summary(
         planned_protein,
@@ -481,14 +480,28 @@ def profile(
     return templates.TemplateResponse("profile.html", {
         "request": request,
         "user": user_obj,
+
         "total_weeks": total_weeks,
         "avg_estimated": round(avg_estimated, 2),
         "avg_actual": round(avg_actual, 2),
+    
         "plans": plans,
+
         "consistency_score": consistency_score,
         "badges": badges,
-        "insight": insight
+        "insight": insight,
+
+        # trainer metrics
+        "planned_protein": planned_protein,
+        "target_protein": target_protein,
+        "total_cost": total_cost,
+        "avg_cost": avg_cost,
+
+        "trainer_title": trainer_title,
+        "trainer_subtitle": trainer_subtitle,
+        "cost_insight": cost_insight
     })
+
 
 
 

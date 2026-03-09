@@ -2,6 +2,12 @@
 
 import random
 
+meals = meal_database[food]
+random.shuffle(meals)
+
+return meals[:3]
+
+
 PORTION_SIZE = 100  # 1 portion = 100g
 
 

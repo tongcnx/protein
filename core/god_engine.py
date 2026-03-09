@@ -2,6 +2,15 @@
 
 ROUND_UNIT = 100
 
+MAX_PORTION = {
+    "egg": 300,
+    "pork": 300,
+    "chicken": 300,
+    "beef": 300
+}
+
+amount = min(amount, MAX_PORTION.get(food, amount))
+
 
 def round_100g(x):
     return int(round(x / ROUND_UNIT)) * ROUND_UNIT
